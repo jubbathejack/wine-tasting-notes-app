@@ -10,19 +10,21 @@ print(sys.stdout.encoding)
 
 load_dotenv()
 
+
 def create_connection():
     return mysql.connector.connect(
-        host=os.getenv('DB_HOST'),
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD'),
-        database=os.getenv('DB_NAME'),
-        port=os.getenv('DB_PORT'),
-        ssl_ca=os.getenv('DB_CA'),
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        port=os.getenv("DB_PORT"),
+        ssl_ca=os.getenv("DB_CA"),
         ssl_verify_cert=True,
         ssl_verify_identity=True,
-        charset='utf8mb4',
-        collation='utf8mb4_unicode_ci'
+        charset="utf8mb4",
+        collation="utf8mb4_unicode_ci",
     )
+
 
 def insert_wine(conn, wine_data):
     query = """
@@ -46,6 +48,7 @@ def insert_wine(conn, wine_data):
     finally:
         cursor.close()
 
+
 def get_wine_input():
     print("\nEnter Wine Details:")
     return (
@@ -68,9 +71,10 @@ def get_wine_input():
         input("Purchase Location (optional): ") or None,
         Decimal(input("Bottle Size (liters, default 0.75): ") or 0.75),
         input("Closure Type [Cork/Screwcap/Glass/Synthetic]: "),
-        input("Organic? [y/N]: ").lower() == 'y',
-        input("Biodynamic? [y/N]: ").lower() == 'y'
+        input("Organic? [y/N]: ").lower() == "y",
+        input("Biodynamic? [y/N]: ").lower() == "y",
     )
+
 
 if __name__ == "__main__":
     conn = create_connection()
@@ -78,7 +82,7 @@ if __name__ == "__main__":
         while True:
             wine_data = get_wine_input()
             insert_wine(conn, wine_data)
-            if input("Add another? [y/N]: ").lower() != 'y':
+            if input("Add another? [y/N]: ").lower() != "y":
                 break
     except KeyboardInterrupt:
         print("\nCancelled!")
