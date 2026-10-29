@@ -1,3 +1,15 @@
 .env
 .venv/
 __pycache__/
+*.py[cod]
+*$py.class
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+.pytest_cache/
+*.json
+*.csv
+!package.json
+!winenotes/**/*.json

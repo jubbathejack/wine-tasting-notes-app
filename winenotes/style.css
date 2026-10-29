@@ -1,0 +1,134 @@
+/* Wine Notes Custom Libadwaita Styles */
+
+.wine-row-card {
+    padding: 10px 14px;
+    border-radius: 9px;
+    margin: 3px 6px;
+    transition: background-color 150ms ease-in-out;
+}
+
+.wine-row-card:hover {
+    background-color: alpha(@card_fg_color, 0.05);
+}
+
+.wine-title {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wine-subtitle {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+/* Color Style Badges */
+.style-badge {
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.style-badge-red {
+    background-color: alpha(#c01c28, 0.18);
+    color: #e01b24;
+    border: 1px solid alpha(#c01c28, 0.35);
+}
+
+.style-badge-white {
+    background-color: alpha(#e5a50a, 0.18);
+    color: #d19a08;
+    border: 1px solid alpha(#e5a50a, 0.35);
+}
+
+.style-badge-rose {
+    background-color: alpha(#f66151, 0.20);
+    color: #e65980;
+    border: 1px solid alpha(#f66151, 0.35);
+}
+
+.style-badge-sparkling {
+    background-color: alpha(#c69c36, 0.22);
+    color: #c49c35;
+    border: 1px solid alpha(#c69c36, 0.40);
+}
+
+.style-badge-dessert {
+    background-color: alpha(#ff7800, 0.18);
+    color: #e66100;
+    border: 1px solid alpha(#ff7800, 0.35);
+}
+
+.style-badge-fortified {
+    background-color: alpha(#9141ac, 0.20);
+    color: #9141ac;
+    border: 1px solid alpha(#9141ac, 0.35);
+}
+
+.style-badge-default {
+    background-color: alpha(@card_fg_color, 0.12);
+    color: @card_fg_color;
+}
+
+/* Rating Score Badge */
+.rating-pill {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.rating-pill-high {
+    background-color: alpha(#2ec27e, 0.22);
+    color: #2ec27e;
+    border: 1px solid alpha(#2ec27e, 0.4);
+}
+
+.rating-pill-mid {
+    background-color: alpha(#3584e4, 0.22);
+    color: #3584e4;
+    border: 1px solid alpha(#3584e4, 0.4);
+}
+
+.rating-pill-low {
+    background-color: alpha(#e5a50a, 0.22);
+    color: #e5a50a;
+    border: 1px solid alpha(#e5a50a, 0.4);
+}
+
+/* Detail View Callout */
+.tasting-note-box {
+    background-color: alpha(@card_bg_color, 0.7);
+    border: 1px solid alpha(@card_fg_color, 0.1);
+    border-left: 4px solid @accent_bg_color;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.eco-pill {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: alpha(#2ec27e, 0.15);
+    color: #2ec27e;
+    border: 1px solid alpha(#2ec27e, 0.3);
+}
+
+.stat-card {
+    background-color: @card_bg_color;
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid alpha(@card_fg_color, 0.08);
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: 800;
+    color: @accent_bg_color;
+}

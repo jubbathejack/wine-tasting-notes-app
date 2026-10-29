@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a0e17" />
+      <stop offset="50%" stop-color="#2c080e" />
+      <stop offset="100%" stop-color="#190407" />
+    </linearGradient>
+
+    <!-- Wine Gradient -->
+    <linearGradient id="wineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e01b24" />
+      <stop offset="50%" stop-color="#a51d2d" />
+      <stop offset="100%" stop-color="#670d18" />
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6d32d" />
+      <stop offset="100%" stop-color="#e5a50a" />
+    </linearGradient>
+
+    <!-- Glass Reflection Gradient -->
+    <linearGradient id="glassSheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+
+    <!-- Subtle Drop Shadow -->
+    <filter id="shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bgGrad)" filter="url(#shadow)" />
+  <rect x="8.5" y="8.5" width="111" height="111" rx="27.5" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" />
+
+  <!-- Wine Glass Stem and Base -->
+  <path d="M48 102 L80 102 C80 100 75 99 66 98 L66 68 L62 68 L62 98 C53 99 48 100 48 102 Z" fill="#ffffff" fill-opacity="0.82" />
+
+  <!-- Wine Glass Bowl Outer Contour -->
+  <path d="M40 24 C40 54 48 68 64 68 C80 68 88 54 88 24 C82 25 46 25 40 24 Z" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.65" />
+
+  <!-- Wine Liquid Fill -->
+  <path d="M43 42 C50 44 78 44 85 42 C86 52 80 64 64 64 C48 64 42 52 43 42 Z" fill="url(#wineGrad)" />
+
+  <!-- Wine Liquid Surface (Meniscus) -->
+  <ellipse cx="64" cy="42" rx="21" ry="3.5" fill="#f66151" fill-opacity="0.6" />
+
+  <!-- Glass Sheen / Highlight -->
+  <path d="M43 28 C42 42 46 54 52 60" fill="none" stroke="url(#glassSheen)" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Tasting Star Accent in Top-Right -->
+  <g transform="translate(82, 22) scale(0.9)">
+    <polygon points="12,1 15.5,8.5 23.5,9.5 17.5,15 19,23 12,19 5,23 6.5,15 0.5,9.5 8.5,8.5" fill="url(#goldGrad)" />
+  </g>
+</svg>
