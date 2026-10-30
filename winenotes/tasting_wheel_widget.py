@@ -16,9 +16,9 @@ from gi.repository import Gtk, Gdk
 from winenotes.aroma_wheel_data import (
     AROMA_CATEGORIES_DATA,
     SUBCATEGORIES,
-    # DESCRIPTOR_MAP,
-    # SubcategoryInfo,
-    # DescriptorInfo,
+    DESCRIPTOR_MAP,
+    SubcategoryInfo,
+    DescriptorInfo,
 )
 
 

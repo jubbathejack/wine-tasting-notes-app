@@ -3,6 +3,7 @@ Dialog for adding or editing a wine tasting note.
 """
 
 from __future__ import annotations
+from ast import List
 from datetime import date, datetime
 from typing import Optional, Callable
 import gi
