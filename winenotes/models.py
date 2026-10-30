@@ -3,6 +3,7 @@ Data models and validation for Wine Tasting Notes.
 """
 
 from __future__ import annotations
+import json
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
@@ -33,6 +34,7 @@ class Wine:
     closure_type: Optional[str] = "Cork"
     organic: bool = False
     biodynamic: bool = False
+    aroma_notes: List[str] = field(default_factory=list)
     id: Optional[int] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -139,6 +141,21 @@ class Wine:
             closure_type=row.get("closure_type", "Cork"),
             organic=bool(row.get("organic", 0)),
             biodynamic=bool(row.get("biodynamic", 0)),
+            aroma_notes=cls._parse_aroma_notes(row.get("aroma_notes")),
             created_at=row.get("created_at"),
             updated_at=row.get("updated_at"),
         )
+
+    @staticmethod
+    def _parse_aroma_notes(raw: Any) -> List[str]:
+        if isinstance(raw, list):
+            return [str(item).strip() for item in raw if str(item).strip()]
+        if isinstance(raw, str) and raw.strip():
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
+            except Exception:
+                pass
+            return [item.strip() for item in raw.split(",") if item.strip()]
+        return []

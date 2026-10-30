@@ -9,6 +9,7 @@ import sqlite3
 import json
 import csv
 from pathlib import Path
+from contextlib import contextmanager
 from typing import Optional, List, Dict, Any, Tuple
 from winenotes.models import Wine, COLOR_STYLES
 from winenotes.sample_data import SAMPLE_WINES
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS wines (
     closure_type TEXT CHECK(closure_type IN ('Cork', 'Screwcap', 'Glass', 'Synthetic', NULL)),
     organic INTEGER DEFAULT 0,
     biodynamic INTEGER DEFAULT 0,
+    aroma_notes TEXT DEFAULT '[]',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -62,16 +64,25 @@ class Database:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_db()
 
-    def _get_connection(self) -> sqlite3.Connection:
+    @contextmanager
+    def _get_connection(self):
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA foreign_keys = ON;")
-        return conn
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def init_db(self) -> None:
         with self._get_connection() as conn:
             conn.executescript(SCHEMA)
+            # Automatic schema migration for existing databases
+            cols = [col[1] for col in conn.execute("PRAGMA table_info(wines)").fetchall()]
+            if "aroma_notes" not in cols:
+                conn.execute("ALTER TABLE wines ADD COLUMN aroma_notes TEXT DEFAULT '[]'")
 
     def count(self) -> int:
         with self._get_connection() as conn:
@@ -85,8 +96,8 @@ class Database:
             color_style, grape_variety, abv, price, tasting_date,
             rating, tasting_notes, serving_temperature, aging_potential,
             food_pairing, purchase_location, bottle_size, closure_type,
-            organic, biodynamic
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            organic, biodynamic, aroma_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             wine.wine_name.strip(),
@@ -110,6 +121,7 @@ class Database:
             wine.closure_type,
             1 if wine.organic else 0,
             1 if wine.biodynamic else 0,
+            json.dumps(wine.aroma_notes or []),
         )
         with self._get_connection() as conn:
             cur = conn.cursor()
@@ -128,7 +140,7 @@ class Database:
             tasting_date = ?, rating = ?, tasting_notes = ?, serving_temperature = ?,
             aging_potential = ?, food_pairing = ?, purchase_location = ?,
             bottle_size = ?, closure_type = ?, organic = ?, biodynamic = ?,
-            updated_at = datetime('now')
+            aroma_notes = ?, updated_at = datetime('now')
         WHERE id = ?
         """
         params = (
@@ -153,6 +165,7 @@ class Database:
             wine.closure_type,
             1 if wine.organic else 0,
             1 if wine.biodynamic else 0,
+            json.dumps(wine.aroma_notes or []),
             wine.id,
         )
         with self._get_connection() as conn:
@@ -187,10 +200,11 @@ class Database:
             clauses.append(
                 "("
                 "wine_name LIKE ? OR winery LIKE ? OR grape_variety LIKE ? "
-                "OR region LIKE ? OR country LIKE ? OR tasting_notes LIKE ? OR CAST(vintage AS TEXT) LIKE ?"
+                "OR region LIKE ? OR country LIKE ? OR tasting_notes LIKE ? "
+                "OR aroma_notes LIKE ? OR CAST(vintage AS TEXT) LIKE ?"
                 ")"
             )
-            params.extend([term, term, term, term, term, term, term])
+            params.extend([term, term, term, term, term, term, term, term])
 
         if style_filter and style_filter != "All":
             clauses.append("color_style = ?")
@@ -305,7 +319,7 @@ class Database:
         fields = [
             "wine_name", "winery", "country", "region", "sub_region", "vintage",
             "color_style", "grape_variety", "abv", "price", "tasting_date",
-            "rating", "tasting_notes", "serving_temperature", "aging_potential",
+            "rating", "tasting_notes", "aroma_notes", "serving_temperature", "aging_potential",
             "food_pairing", "purchase_location", "bottle_size", "closure_type",
             "organic", "biodynamic"
         ]
@@ -315,5 +329,7 @@ class Database:
             for w in wines:
                 d = w.to_dict()
                 row = {k: d.get(k) for k in fields}
+                if isinstance(row.get("aroma_notes"), list):
+                    row["aroma_notes"] = ", ".join(row["aroma_notes"])
                 writer.writerow(row)
         return len(wines)

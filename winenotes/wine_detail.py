@@ -8,6 +8,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Pango, GLib
 from winenotes.models import Wine
+from winenotes.aroma_dialog import AromaWheelDialog
+from winenotes.aroma_wheel_data import get_descriptor_css_class
 
 class WineDetailView(Gtk.ScrolledWindow):
     def __init__(self):
@@ -135,7 +137,65 @@ class WineDetailView(Gtk.ScrolledWindow):
         notes_group.add(notes_box)
         self.main_box.append(notes_group)
 
-        # 3. Wine Profile Group
+        # 3. Aroma and Flavor Wheel Keywords
+        aroma_group = Adw.PreferencesGroup.new()
+        aroma_group.set_title("Aroma and Flavor Profile")
+        count_desc = (
+            f"{len(wine.aroma_notes)} flavor keywords categorized from tasting wheel"
+            if wine.aroma_notes
+            else "Categorize tasting flavors using the visual aroma wheel"
+        )
+        aroma_group.set_description(count_desc)
+
+        aroma_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        aroma_card.add_css_class("card")
+        aroma_card.set_margin_top(4)
+
+        card_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        card_inner.set_margin_top(14)
+        card_inner.set_margin_bottom(14)
+        card_inner.set_margin_start(16)
+        card_inner.set_margin_end(16)
+
+        header_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        header_title = Gtk.Label(label="Tasting Wheel Keywords", xalign=0.0)
+        header_title.add_css_class("heading")
+        header_title.set_hexpand(True)
+        header_row.append(header_title)
+
+        explore_wheel_btn = Gtk.Button.new_with_label("View on Tasting Wheel...")
+        explore_wheel_btn.add_css_class("pill")
+        explore_wheel_btn.set_valign(Gtk.Align.CENTER)
+        explore_wheel_btn.connect("clicked", lambda b, w=wine: self._open_wheel_viewer(w))
+        header_row.append(explore_wheel_btn)
+        card_inner.append(header_row)
+
+        if wine.aroma_notes:
+            chips_flow = Gtk.FlowBox.new()
+            chips_flow.set_selection_mode(Gtk.SelectionMode.NONE)
+            chips_flow.set_column_spacing(8)
+            chips_flow.set_row_spacing(8)
+
+            for kw in wine.aroma_notes:
+                badge = Gtk.Label(label=kw)
+                badge.add_css_class("aroma-badge")
+                badge.add_css_class(get_descriptor_css_class(kw))
+                chips_flow.append(badge)
+            card_inner.append(chips_flow)
+        else:
+            no_aroma_lbl = Gtk.Label(
+                label="No aroma keywords tagged yet. Edit this note to select keywords from the tasting wheel.",
+                xalign=0.0,
+            )
+            no_aroma_lbl.add_css_class("dim-label")
+            no_aroma_lbl.add_css_class("caption")
+            card_inner.append(no_aroma_lbl)
+
+        aroma_card.append(card_inner)
+        aroma_group.add(aroma_card)
+        self.main_box.append(aroma_group)
+
+        # 4. Wine Profile Group
         profile_group = Adw.PreferencesGroup.new()
         profile_group.set_title("Wine Profile and Terroir")
 
@@ -211,3 +271,15 @@ class WineDetailView(Gtk.ScrolledWindow):
         row.set_subtitle(GLib.markup_escape_text(subtitle or "—"))
         row.set_subtitle_lines(0)
         group.add(row)
+
+    def _open_wheel_viewer(self, wine: Wine):
+        dlg = AromaWheelDialog(
+            initial_keywords=wine.aroma_notes,
+            allow_append_to_notes=False,
+        )
+        root = self.get_root()
+        if root:
+            dlg.present(root)
+        else:
+            dlg.present()
+

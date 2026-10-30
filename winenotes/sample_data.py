@@ -18,6 +18,7 @@ SAMPLE_WINES = [
         price=135.0,
         tasting_date="2026-05-18",
         rating=97,
+        aroma_notes=["Blackberry", "Black Currant", "Violet", "Cigar Box", "Slate", "Vanilla"],
         tasting_notes=(
             "Deep garnet-purple color. Sensational bouquet of crème de cassis, blackberry compote, "
             "graphite, dried violets, and cigar box. Full-bodied with breathtaking depth, silky yet "
@@ -46,6 +47,7 @@ SAMPLE_WINES = [
         price=450.0,
         tasting_date="2026-06-22",
         rating=98,
+        aroma_notes=["Cherry", "Rose", "Truffle", "Orange", "Potting Soil"],
         tasting_notes=(
             "Translucent ruby hue. Breathtakingly perfumed with wild cherries, crushed rose petals, "
             "blood orange rind, forest floor, and subtle truffles. On the palate, pure lace and velvet—"
@@ -73,6 +75,7 @@ SAMPLE_WINES = [
         price=75.0,
         tasting_date="2026-07-12",
         rating=94,
+        aroma_notes=["Lime", "Peach", "Beeswax", "Slate", "Grapefruit"],
         tasting_notes=(
             "Pale straw with green highlights. Flinty crushed-rock minerality immediately takes center stage, "
             "accompanied by lemon curd, white peach, kaffir lime, and beeswax. Rich, textured mid-palate "
@@ -100,6 +103,7 @@ SAMPLE_WINES = [
         price=240.0,
         tasting_date="2026-08-01",
         rating=96,
+        aroma_notes=["Apple", "Nuts", "Sourdough", "Marmalade", "Baking Spices"],
         tasting_notes=(
             "Luminous gold with superfine, endless effervescence. Aromas of toasted brioche, marzipan, "
             "roasted hazelnut, candied citrus peel, and baked apple. The mousse is pillowy and luxurious, "
@@ -127,6 +131,7 @@ SAMPLE_WINES = [
         price=36.0,
         tasting_date="2026-08-15",
         rating=93,
+        aroma_notes=["Peach", "Pomegranate", "Red Pepper", "Thyme"],
         tasting_notes=(
             "Intense pale peach-salmon color. Notes of blood peach, garrigue herbs, pomegranate, "
             "and subtle pink peppercorn. A gastronomic rosé with serious phenolic grip, savory undertones, "
@@ -154,6 +159,7 @@ SAMPLE_WINES = [
         price=85.0,
         tasting_date="2026-09-04",
         rating=95,
+        aroma_notes=["Sour Cherry", "Rose", "Anise", "Orange", "Black Tea"],
         tasting_notes=(
             "Luminous translucent ruby. Ethereal nose of sour red cherries, dried rose petals, "
             "tar, licorice, and orange peel. Taut, noble Nebbiolo tannins with striking freshness and "

@@ -44,6 +44,16 @@ class WineRow(Gtk.ListBoxRow):
         origin_label.set_ellipsize(Pango.EllipsizeMode.END)
         vbox_left.append(origin_label)
 
+        if wine.aroma_notes:
+            aroma_preview = " • ".join(wine.aroma_notes[:3])
+            if len(wine.aroma_notes) > 3:
+                aroma_preview += f" (+{len(wine.aroma_notes) - 3})"
+            aroma_label = Gtk.Label(label=f"Aromas: {aroma_preview}", xalign=0.0)
+            aroma_label.add_css_class("caption")
+            aroma_label.add_css_class("dim-label")
+            aroma_label.set_ellipsize(Pango.EllipsizeMode.END)
+            vbox_left.append(aroma_label)
+
         hbox.append(vbox_left)
 
         # Right column: Style badge & Rating

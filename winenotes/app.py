@@ -73,6 +73,18 @@ class WineNotesApplication(Adw.Application):
         dialog.set_website("https://github.com/jubbathejack/wine-tasting-notes-app")
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_copyright("© 2026 Jack Parker")
+        dialog.set_release_notes_version(__version__)
+        dialog.set_release_notes(
+            "<p>Version 1.1.0 introduces the interactive Wine Aroma &amp; Flavor Wheel:</p>"
+            "<ul>"
+            "<li>Visual 3-tier tasting wheel with 112 descriptors rendered in Cairo.</li>"
+            "<li>Hover path inspection and interactive click-to-select flavor keywords.</li>"
+            "<li>Aroma wheel explorer dialog with instant search and category browser.</li>"
+            "<li>Structured aroma keywords displayed as colorful badges in detail cards.</li>"
+            "<li>Automatic tasting note sentence generator from selected keywords.</li>"
+            "<li>Collection search queries now match aroma keywords.</li>"
+            "</ul>"
+        )
         if self.window:
             dialog.present(self.window)
         else:

@@ -153,5 +153,91 @@ class TestDatabaseOperations(unittest.TestCase):
         self.assertEqual(count, len(SAMPLE_WINES))
         self.assertTrue(csv_file.exists())
 
+    def test_aroma_notes_db_and_search(self):
+        wine = Wine(
+            wine_name="Aroma Test Syrah",
+            winery="Rhône Cellars",
+            country="France",
+            tasting_notes="Spicy and floral.",
+            aroma_notes=["Black Pepper", "Violet", "Blackberry"],
+        )
+        wine_id = self.db.insert(wine)
+        fetched = self.db.get_by_id(wine_id)
+        self.assertEqual(fetched.aroma_notes, ["Black Pepper", "Violet", "Blackberry"])
+
+        # Search by aroma keyword
+        matches = self.db.list_wines(search="Black Pepper")
+        self.assertTrue(any(w.id == wine_id for w in matches))
+
+        # Update aromas
+        fetched.aroma_notes = ["Black Pepper", "Vanilla"]
+        self.db.update(fetched)
+        updated = self.db.get_by_id(wine_id)
+        self.assertEqual(updated.aroma_notes, ["Black Pepper", "Vanilla"])
+
+
+class TestAromaWheelData(unittest.TestCase):
+    def test_aroma_wheel_taxonomy(self):
+        from winenotes.aroma_wheel_data import (
+            SUBCATEGORIES,
+            DESCRIPTOR_MAP,
+            get_descriptor_info,
+            get_descriptor_css_class,
+            format_keywords_sentence,
+        )
+        self.assertTrue(len(SUBCATEGORIES) >= 19)
+        self.assertTrue(len(DESCRIPTOR_MAP) >= 100)
+        self.assertIn("Sour Cherry", DESCRIPTOR_MAP)
+        self.assertIn("Vanilla", DESCRIPTOR_MAP)
+        self.assertIn("Lime", DESCRIPTOR_MAP)
+
+        info = get_descriptor_info("Sour Cherry")
+        self.assertIsNotNone(info)
+        self.assertEqual(info.tier2, "Red Fruit")
+        self.assertEqual(get_descriptor_css_class("Sour Cherry"), "aroma-cat-red-fruit")
+
+        # Sentence formatting
+        sentence = format_keywords_sentence(["Blackberry", "Violet", "Vanilla"])
+        self.assertIn("blackberry", sentence)
+        self.assertIn("violet", sentence)
+        self.assertIn("vanilla", sentence)
+
+
+class TestAromaWheelWidgets(unittest.TestCase):
+    def test_widget_and_dialog_init(self):
+        import gi
+        gi.require_version("Gtk", "4.0")
+        gi.require_version("Adw", "1")
+        from gi.repository import Adw
+        Adw.init()
+
+        from winenotes.tasting_wheel_widget import TastingWheelWidget
+        from winenotes.aroma_dialog import AromaWheelDialog
+
+        widget = TastingWheelWidget(selected_descriptors={"Lime", "Vanilla"})
+        self.assertEqual(widget.selected_descriptors, {"Lime", "Vanilla"})
+        widget.toggle_descriptor("Lime")
+        self.assertNotIn("Lime", widget.selected_descriptors)
+
+        dialog = AromaWheelDialog(initial_keywords=["Cherry", "Oak Aging"])
+        self.assertIn("Cherry", dialog.selected_keywords)
+
+    def test_changelog_dialog_and_file(self):
+        from pathlib import Path
+        from winenotes.changelog_dialog import ChangelogDialog, RELEASES
+
+        changelog_file = Path(__file__).parent.parent / "CHANGELOG.md"
+        self.assertTrue(changelog_file.exists())
+        content = changelog_file.read_text(encoding="utf-8")
+        self.assertIn("1.1.0", content)
+        self.assertIn("1.0.0", content)
+
+        self.assertTrue(len(RELEASES) >= 2)
+        dlg = ChangelogDialog()
+        self.assertIsNotNone(dlg)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+

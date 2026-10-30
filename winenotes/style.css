@@ -132,3 +132,139 @@
     font-weight: 800;
     color: @accent_bg_color;
 }
+
+/* Aroma & Flavor Wheel Badges */
+.aroma-badge {
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.aroma-chip-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.aroma-cat-flower {
+    background-color: alpha(#6173b5, 0.20);
+    color: #4a5da6;
+    border: 1px solid alpha(#6173b5, 0.40);
+}
+
+.aroma-cat-citrus {
+    background-color: alpha(#79ba3c, 0.20);
+    color: #5d962a;
+    border: 1px solid alpha(#79ba3c, 0.40);
+}
+
+.aroma-cat-tree-fruit {
+    background-color: alpha(#f2a25b, 0.20);
+    color: #d17c2f;
+    border: 1px solid alpha(#f2a25b, 0.40);
+}
+
+.aroma-cat-tropical-fruit {
+    background-color: alpha(#e55223, 0.20);
+    color: #cb3e12;
+    border: 1px solid alpha(#e55223, 0.40);
+}
+
+.aroma-cat-red-fruit {
+    background-color: alpha(#b82329, 0.20);
+    color: #b82329;
+    border: 1px solid alpha(#b82329, 0.40);
+}
+
+.aroma-cat-black-fruit {
+    background-color: alpha(#60142e, 0.22);
+    color: #7b1e3e;
+    border: 1px solid alpha(#60142e, 0.40);
+}
+
+.aroma-cat-dried-fruit {
+    background-color: alpha(#9e2a6c, 0.20);
+    color: #9e2a6c;
+    border: 1px solid alpha(#9e2a6c, 0.40);
+}
+
+.aroma-cat-noble-rot {
+    background-color: alpha(#70a0cb, 0.20);
+    color: #4578a5;
+    border: 1px solid alpha(#70a0cb, 0.40);
+}
+
+.aroma-cat-spice {
+    background-color: alpha(#029b90, 0.20);
+    color: #028077;
+    border: 1px solid alpha(#029b90, 0.40);
+}
+
+.aroma-cat-vegetable {
+    background-color: alpha(#1d8745, 0.20);
+    color: #177038;
+    border: 1px solid alpha(#1d8745, 0.40);
+}
+
+.aroma-cat-earth {
+    background-color: alpha(#54812f, 0.20);
+    color: #466e25;
+    border: 1px solid alpha(#54812f, 0.40);
+}
+
+.aroma-cat-microbial {
+    background-color: alpha(#a2b826, 0.20);
+    color: #7e9117;
+    border: 1px solid alpha(#a2b826, 0.40);
+}
+
+.aroma-cat-oak-aging {
+    background-color: alpha(#ba7c2b, 0.20);
+    color: #9f651b;
+    border: 1px solid alpha(#ba7c2b, 0.40);
+}
+
+.aroma-cat-general-aging {
+    background-color: alpha(#be6e3a, 0.20);
+    color: #a45a2a;
+    border: 1px solid alpha(#be6e3a, 0.40);
+}
+
+.aroma-cat-tca {
+    background-color: alpha(#9d6953, 0.20);
+    color: #7d503d;
+    border: 1px solid alpha(#9d6953, 0.40);
+}
+
+.aroma-cat-sulfides {
+    background-color: alpha(#cc5b40, 0.20);
+    color: #b0442a;
+    border: 1px solid alpha(#cc5b40, 0.40);
+}
+
+.aroma-cat-brettanomyces {
+    background-color: alpha(#9f4350, 0.20);
+    color: #83313d;
+    border: 1px solid alpha(#9f4350, 0.40);
+}
+
+.aroma-cat-cooked {
+    background-color: alpha(#902c55, 0.20);
+    color: #751f42;
+    border: 1px solid alpha(#902c55, 0.40);
+}
+
+.aroma-cat-volatile-acidity {
+    background-color: alpha(#6e2d78, 0.20);
+    color: #551e5d;
+    border: 1px solid alpha(#6e2d78, 0.40);
+}
+
+.aroma-cat-default {
+    background-color: alpha(@card_fg_color, 0.12);
+    color: @card_fg_color;
+    border: 1px solid alpha(@card_fg_color, 0.25);
+}
+

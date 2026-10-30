@@ -16,6 +16,8 @@ from winenotes.wine_row import WineRow
 from winenotes.wine_detail import WineDetailView
 from winenotes.wine_dialog import WineDialog
 from winenotes.stats_dialog import StatsDialog
+from winenotes.aroma_dialog import AromaWheelDialog
+from winenotes.changelog_dialog import ChangelogDialog
 
 STYLE_FILTERS = ["All Styles"] + COLOR_STYLES
 
@@ -83,6 +85,7 @@ class MainWindow(Adw.ApplicationWindow):
         menu_btn.set_tooltip_text("Main Menu")
 
         menu = Gio.Menu.new()
+        menu.append("Wine Aroma Wheel Reference", "win.show-aroma-wheel")
         menu.append("Collection Statistics", "win.show-stats")
         menu.append("Seed Sample Wines", "win.seed-samples")
 
@@ -93,6 +96,7 @@ class MainWindow(Adw.ApplicationWindow):
         menu.append_section(None, data_section)
 
         about_section = Gio.Menu.new()
+        about_section.append("What's New (Changelog)", "win.show-changelog")
         about_section.append("About Wine Notes", "app.about")
         menu.append_section(None, about_section)
 
@@ -210,6 +214,16 @@ class MainWindow(Adw.ApplicationWindow):
         self.split_view.set_content(content_page)
 
     def _setup_window_actions(self):
+        # Action: Show Aroma Wheel Reference
+        wheel_action = Gio.SimpleAction.new("show-aroma-wheel", None)
+        wheel_action.connect("activate", lambda a, p: self.show_aroma_wheel_dialog())
+        self.add_action(wheel_action)
+
+        # Action: Show Changelog
+        changelog_action = Gio.SimpleAction.new("show-changelog", None)
+        changelog_action.connect("activate", lambda a, p: self.show_changelog_dialog())
+        self.add_action(changelog_action)
+
         # Action: Show Stats
         stats_action = Gio.SimpleAction.new("show-stats", None)
         stats_action.connect("activate", lambda a, p: self.show_stats_dialog())
@@ -355,6 +369,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.show_toast(f"Deleted '{wine.wine_name}'", undo_callback=undo)
         self.selected_wine = None
         self.reload_wines()
+
+    def show_aroma_wheel_dialog(self):
+        dialog = AromaWheelDialog(initial_keywords=[], allow_append_to_notes=False)
+        dialog.present(self)
+
+    def show_changelog_dialog(self):
+        dialog = ChangelogDialog()
+        dialog.present(self)
 
     def show_stats_dialog(self):
         stats = self.db.get_stats()

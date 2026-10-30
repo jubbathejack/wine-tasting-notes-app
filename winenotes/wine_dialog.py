@@ -10,6 +10,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw
 from winenotes.models import Wine, COLOR_STYLES, CLOSURE_TYPES
+from winenotes.aroma_dialog import AromaWheelDialog
+from winenotes.aroma_wheel_data import get_descriptor_css_class, format_keywords_sentence
 
 BOTTLE_SIZES = [
     ("0.75 L (Standard)", 0.75),
@@ -29,6 +31,7 @@ class WineDialog(Adw.Dialog):
         self.wine = wine
         self.on_save = on_save
         self.is_edit = wine is not None
+        self.aroma_keywords = list(wine.aroma_notes) if (self.is_edit and wine and wine.aroma_notes) else []
 
         title = "Edit Wine Tasting Note" if self.is_edit else "New Wine Tasting Note"
         self.set_title(title)
@@ -166,6 +169,49 @@ class WineDialog(Adw.Dialog):
         notes_grp.add(scrolled_notes)
 
         page.add(notes_grp)
+
+        # --- Aroma and Flavor Wheel Profile ---
+        aroma_grp = Adw.PreferencesGroup.new()
+        aroma_grp.set_title("Aroma and Flavor Wheel (Keywords)")
+        aroma_grp.set_description("Categorize what you tasted using the visual tasting wheel.")
+
+        wheel_row = Adw.ActionRow.new()
+        wheel_row.set_title("Tasting Wheel Descriptors")
+        wheel_row.set_subtitle("Pick structured flavor keywords to accompany your notes.")
+
+        open_wheel_btn = Gtk.Button.new_with_label("Open Tasting Wheel...")
+        open_wheel_btn.add_css_class("suggested-action")
+        open_wheel_btn.add_css_class("pill")
+        open_wheel_btn.set_valign(Gtk.Align.CENTER)
+        open_wheel_btn.connect("clicked", lambda b: self._open_aroma_wheel_dialog())
+        wheel_row.add_suffix(open_wheel_btn)
+        aroma_grp.add(wheel_row)
+
+        # Chips container
+        self.aroma_chips_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.aroma_chips_container.set_margin_top(8)
+        self.aroma_chips_container.set_margin_bottom(8)
+        self.aroma_chips_container.set_margin_start(12)
+        self.aroma_chips_container.set_margin_end(12)
+
+        self.aroma_flowbox = Gtk.FlowBox.new()
+        self.aroma_flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.aroma_flowbox.set_column_spacing(6)
+        self.aroma_flowbox.set_row_spacing(6)
+        self.aroma_chips_container.append(self.aroma_flowbox)
+
+        # Button to append keywords into tasting notes description
+        self.append_notes_btn = Gtk.Button.new_with_label("Append Keywords to Notes Description")
+        self.append_notes_btn.add_css_class("flat")
+        self.append_notes_btn.add_css_class("caption")
+        self.append_notes_btn.set_halign(Gtk.Align.START)
+        self.append_notes_btn.connect("clicked", lambda b: self._append_keywords_to_notes())
+        self.aroma_chips_container.append(self.append_notes_btn)
+
+        aroma_grp.add(self.aroma_chips_container)
+        page.add(aroma_grp)
+
+        self._refresh_dialog_aroma_chips()
 
         # --- Group 4: Technical Specifications ---
         tech_grp = Adw.PreferencesGroup.new()
@@ -348,6 +394,7 @@ class WineDialog(Adw.Dialog):
             closure_type=closure_type,
             organic=self.organic_row.get_active(),
             biodynamic=self.biodynamic_row.get_active(),
+            aroma_notes=list(self.aroma_keywords),
         )
 
         validation_errors = saved_wine.validate()
@@ -359,3 +406,65 @@ class WineDialog(Adw.Dialog):
             self.on_save(saved_wine)
 
         self.close()
+
+    def _open_aroma_wheel_dialog(self):
+        def on_apply(keywords: List[str], generated_sentence: Optional[str]):
+            self.aroma_keywords = keywords
+            self._refresh_dialog_aroma_chips()
+            if generated_sentence:
+                self._insert_into_notes(generated_sentence)
+
+        dlg = AromaWheelDialog(
+            initial_keywords=self.aroma_keywords,
+            on_apply=on_apply,
+            allow_append_to_notes=True,
+        )
+        dlg.present(self)
+
+    def _refresh_dialog_aroma_chips(self):
+        while child := self.aroma_flowbox.get_first_child():
+            self.aroma_flowbox.remove(child)
+
+        if not self.aroma_keywords:
+            empty_lbl = Gtk.Label(
+                label="No aroma keywords selected yet. Click 'Open Tasting Wheel' to select aromas.",
+                xalign=0.0,
+            )
+            empty_lbl.add_css_class("dim-label")
+            empty_lbl.add_css_class("caption")
+            self.aroma_flowbox.append(empty_lbl)
+            self.append_notes_btn.set_sensitive(False)
+            return
+
+        self.append_notes_btn.set_sensitive(True)
+        for kw in sorted(self.aroma_keywords):
+            chip = Gtk.Button(label=f"{kw}  ×")
+            chip.add_css_class("pill")
+            chip.add_css_class("aroma-chip-btn")
+            chip.add_css_class(get_descriptor_css_class(kw))
+            chip.set_tooltip_text(f"Remove '{kw}'")
+            chip.connect("clicked", self._remove_dialog_keyword, kw)
+            self.aroma_flowbox.append(chip)
+
+    def _remove_dialog_keyword(self, _btn, keyword: str):
+        if keyword in self.aroma_keywords:
+            self.aroma_keywords.remove(keyword)
+            self._refresh_dialog_aroma_chips()
+
+    def _append_keywords_to_notes(self):
+        if not self.aroma_keywords:
+            return
+        sentence = format_keywords_sentence(self.aroma_keywords)
+        if sentence:
+            self._insert_into_notes(sentence)
+
+    def _insert_into_notes(self, sentence: str):
+        start_iter = self.notes_buffer.get_start_iter()
+        end_iter = self.notes_buffer.get_end_iter()
+        current_text = self.notes_buffer.get_text(start_iter, end_iter, True).strip()
+
+        if not current_text:
+            self.notes_buffer.set_text(sentence)
+        elif sentence not in current_text:
+            self.notes_buffer.set_text(f"{current_text} {sentence}")
+        self._show_toast("Added keywords to notes description.")
