@@ -13,3 +13,9 @@ __pycache__/
 *.csv
 !package.json
 !winenotes/**/*.json
+
+# Snapcraft build artifacts
+/parts/
+/stage/
+/prime/
+/*.snap

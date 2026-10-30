@@ -1,0 +1,70 @@
+name: wine-tasting-notes
+title: Wine Tasting Notes
+base: core26
+version: '1.1.0'
+summary: Record, rate, and review wine tasting notes
+description: |
+  Wine Notes is an elegant GNOME desktop application for recording, rating,
+  and managing personal wine tasting notes. It includes an interactive aroma
+  and flavor wheel, detailed tasting records, collection statistics, local
+  SQLite storage, and JSON/CSV import and export.
+
+grade: stable
+confinement: strict
+license: MIT
+website: https://github.com/jubbathejack/wine-tasting-notes-app
+source-code: https://github.com/jubbathejack/wine-tasting-notes-app
+issues: https://github.com/jubbathejack/wine-tasting-notes-app/issues
+icon: snap/gui/icon.svg
+
+apps:
+  wine-tasting-notes:
+    command: bin/wine-tasting-notes
+    extensions:
+      - gnome
+    # plugs:
+    #   - home
+    slots:
+      - dbus-wine-notes
+    environment:
+      XDG_DATA_HOME: $SNAP_USER_DATA/.local/share
+
+parts:
+  wine-tasting-notes:
+    plugin: dump
+    source: .
+    organize:
+      data/icons: usr/share/icons
+    stage:
+      - "-tests"
+      - "-snap"
+      - "-README.md"
+      - "-CHANGELOG.md"
+      - "-requirements.txt"
+      - "-__pycache__"
+      - "-**/__pycache__"
+      - "-*.pyc"
+      - "-**/*.pyc"
+      - "-*.db"
+      - "-*.db-wal"
+      - "-*.db-shm"
+      - "-**/*.db"
+      - "-**/*.db-wal"
+      - "-**/*.db-shm"
+    stage-packages:
+      - python3-gi
+      - python3-gi-cairo
+      - gir1.2-gtk-4.0
+      - gir1.2-adw-1
+
+  launcher:
+    plugin: dump
+    source: snap/local
+    organize:
+      wine-tasting-notes: bin/wine-tasting-notes
+
+slots:
+  dbus-wine-notes:
+    interface: dbus
+    bus: session
+    name: org.jubba.WineNotes

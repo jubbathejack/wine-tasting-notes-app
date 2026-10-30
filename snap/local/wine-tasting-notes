@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "$SNAP/gnome-platform/usr/bin/python3" "$SNAP/main.py" "$@"

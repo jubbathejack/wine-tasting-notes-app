@@ -10,7 +10,7 @@ import json
 import csv
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any
 from winenotes.models import Wine, COLOR_STYLES
 from winenotes.sample_data import SAMPLE_WINES
 

@@ -14,11 +14,9 @@ from gi.repository import Gtk, Adw, Gio, GLib
 
 from winenotes.tasting_wheel_widget import TastingWheelWidget
 from winenotes.aroma_wheel_data import (
-    AROMA_CATEGORIES_DATA,
     SUBCATEGORIES,
     DESCRIPTOR_MAP,
     format_keywords_sentence,
-    get_descriptor_info,
     get_descriptor_css_class,
 )
 

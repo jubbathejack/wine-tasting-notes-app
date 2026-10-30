@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Wine Notes
+GenericName=Wine Tasting Notes
+Comment=Record, rate, and review wine tasting notes
+Exec=wine-tasting-notes %U
+Icon=${SNAP}/meta/gui/icon.svg
+Terminal=false
+Type=Application
+Categories=Utility;Office;Database;
+StartupNotify=true
+StartupWMClass=org.jubba.WineNotes
+Keywords=Wine;Tasting;Sommelier;Notes;Review;Cellar;
+X-Purism-FormFactor=Workstation;Mobile;

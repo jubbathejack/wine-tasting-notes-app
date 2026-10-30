@@ -11,14 +11,14 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gdk, Pango, PangoCairo
+from gi.repository import Gtk, Gdk
 
 from winenotes.aroma_wheel_data import (
     AROMA_CATEGORIES_DATA,
     SUBCATEGORIES,
-    DESCRIPTOR_MAP,
-    SubcategoryInfo,
-    DescriptorInfo,
+    # DESCRIPTOR_MAP,
+    # SubcategoryInfo,
+    # DescriptorInfo,
 )
 
 
@@ -309,6 +309,7 @@ class TastingWheelWidget(Gtk.DrawingArea):
             is_highlighted = name in self.highlighted_descriptors or not self.highlighted_descriptors
 
             cr.save()
+            cr.new_path()
             cr.arc(cx, cy, r3, s_ang, e_ang)
             cr.arc_negative(cx, cy, r2, e_ang, s_ang)
             cr.close_path()
@@ -398,6 +399,7 @@ class TastingWheelWidget(Gtk.DrawingArea):
             )
 
             cr.save()
+            cr.new_path()
             cr.arc(cx, cy, r2, s_ang, e_ang)
             cr.arc_negative(cx, cy, r1, e_ang, s_ang)
             cr.close_path()
@@ -454,6 +456,7 @@ class TastingWheelWidget(Gtk.DrawingArea):
             )
 
             cr.save()
+            cr.new_path()
             cr.arc(cx, cy, r1, s_ang, e_ang)
             cr.arc_negative(cx, cy, r0, e_ang, s_ang)
             cr.close_path()
@@ -495,6 +498,7 @@ class TastingWheelWidget(Gtk.DrawingArea):
 
         # 4. DRAW CENTER HUB
         cr.save()
+        cr.new_path()
         cr.arc(cx, cy, r0, 0, 2 * math.pi)
         cr.set_source_rgba(0.12, 0.12, 0.14, 0.95)
         cr.fill_preserve()

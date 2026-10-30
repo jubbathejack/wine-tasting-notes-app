@@ -5,6 +5,16 @@ All notable changes to the Wine Tasting Notes application will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Develop
+
+### Added
+- Snap packaging (`snap/snapcraft.yaml`) using the GNOME extension and its content snap for the PyGObject, Pycairo, GTK 4, and Libadwaita runtime, so the aroma wheel renders without host `python3-gi-cairo`.
+- Desktop launcher and application icon for the snap in `snap/gui/`.
+
+### Fixed
+- Aroma wheel segments bleeding into adjacent segments caused by stale Cairo path state from previous labels being connected into the next slice.
+- Missing application icon in the About dialog when running from the snap by installing the hicolor icon into the snap runtime.
+
 ## [1.1.0] - 2026-10-30
 
 ### Added
