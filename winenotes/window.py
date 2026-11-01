@@ -17,7 +17,10 @@ from winenotes.wine_detail import WineDetailView
 from winenotes.wine_dialog import WineDialog
 from winenotes.stats_dialog import StatsDialog
 from winenotes.aroma_dialog import AromaWheelDialog
-from winenotes.changelog_dialog import ChangelogDialog
+
+CHANGELOG_URL = (
+    "https://github.com/jubbathejack/wine-tasting-notes-app/blob/develop/CHANGELOG.md"
+)
 
 STYLE_FILTERS = ["All Styles"] + COLOR_STYLES
 
@@ -96,7 +99,7 @@ class MainWindow(Adw.ApplicationWindow):
         menu.append_section(None, data_section)
 
         about_section = Gio.Menu.new()
-        about_section.append("What's New (Changelog)", "win.show-changelog")
+        about_section.append("Changelog", "win.show-changelog")
         about_section.append("About Wine Notes", "app.about")
         menu.append_section(None, about_section)
 
@@ -219,9 +222,9 @@ class MainWindow(Adw.ApplicationWindow):
         wheel_action.connect("activate", lambda a, p: self.show_aroma_wheel_dialog())
         self.add_action(wheel_action)
 
-        # Action: Show Changelog
+        # Action: Open Changelog
         changelog_action = Gio.SimpleAction.new("show-changelog", None)
-        changelog_action.connect("activate", lambda a, p: self.show_changelog_dialog())
+        changelog_action.connect("activate", lambda a, p: self.show_changelog())
         self.add_action(changelog_action)
 
         # Action: Show Stats
@@ -374,9 +377,15 @@ class MainWindow(Adw.ApplicationWindow):
         dialog = AromaWheelDialog(initial_keywords=[], allow_append_to_notes=False)
         dialog.present(self)
 
-    def show_changelog_dialog(self):
-        dialog = ChangelogDialog()
-        dialog.present(self)
+    def show_changelog(self):
+        launcher = Gtk.UriLauncher.new(CHANGELOG_URL)
+        launcher.launch(self, None, self._on_changelog_launched)
+
+    def _on_changelog_launched(self, launcher, result):
+        try:
+            launcher.launch_finish(result)
+        except GLib.Error:
+            self.show_toast("Could not open the changelog")
 
     def show_stats_dialog(self):
         stats = self.db.get_stats()

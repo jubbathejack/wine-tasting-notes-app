@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Develop
 
+### [1.1.2] - 2026-11-02
+
+### Changed
+- Altered the contact form to link to github issues.
+- Removed the in-app changelog dialog and hard-coded About release notes; the menu now links to `CHANGELOG.md` on GitHub.
+
 ### [1.1.1] - 2026-11-01
 
 ### Added

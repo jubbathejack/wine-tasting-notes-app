@@ -222,19 +222,16 @@ class TestAromaWheelWidgets(unittest.TestCase):
         dialog = AromaWheelDialog(initial_keywords=["Cherry", "Oak Aging"])
         self.assertIn("Cherry", dialog.selected_keywords)
 
-    def test_changelog_dialog_and_file(self):
+    def test_changelog_file(self):
         from pathlib import Path
-        from winenotes.changelog_dialog import ChangelogDialog, RELEASES
+        from winenotes.window import CHANGELOG_URL
 
         changelog_file = Path(__file__).parent.parent / "CHANGELOG.md"
         self.assertTrue(changelog_file.exists())
         content = changelog_file.read_text(encoding="utf-8")
         self.assertIn("1.1.0", content)
         self.assertIn("1.0.0", content)
-
-        self.assertTrue(len(RELEASES) >= 2)
-        dlg = ChangelogDialog()
-        self.assertIsNotNone(dlg)
+        self.assertTrue(CHANGELOG_URL.endswith("/CHANGELOG.md"))
 
 
 if __name__ == "__main__":

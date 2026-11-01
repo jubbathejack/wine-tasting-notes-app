@@ -94,7 +94,6 @@ wine-tasting-notes-app/
 │   ├── tasting_wheel_widget.py  # Cairo-rendered interactive aroma wheel
 │   ├── aroma_dialog.py      # Aroma wheel exploration and keyword selection
 │   ├── stats_dialog.py      # Collection statistics dialog
-│   ├── changelog_dialog.py  # In-app release history dialog
 │   └── style.css            # Custom Libadwaita styling
 ├── tests/
 │   └── test_winenotes.py    # Unit and integration test suite
@@ -122,6 +121,10 @@ Wine Notes is a local, offline-first desktop application:
 - SQLite for durable local storage, with automatic backward-compatible schema migrations.
 - A Cairo-drawn aroma wheel for interactive flavor exploration.
 - No runtime pip dependencies, web server, or external database.
+
+## Changelog
+
+Release history is maintained in [CHANGELOG.md](CHANGELOG.md). The application menu links to the same file on GitHub.
 
 ## License
 

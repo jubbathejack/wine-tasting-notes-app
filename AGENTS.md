@@ -55,8 +55,7 @@ there is no project config for them. Do not reformat unrelated files.
   lookup maps.
 - `winenotes/tasting_wheel_widget.py`: custom Cairo-drawn interactive wheel.
 - `winenotes/aroma_dialog.py`: aroma wheel exploration and keyword selection.
-- `winenotes/stats_dialog.py`, `changelog_dialog.py`: statistics and in-app
-  release history dialogs.
+- `winenotes/stats_dialog.py`: collection statistics dialog.
 - `winenotes/style.css`: custom Libadwaita CSS, loaded globally at startup.
 - `tests/test_winenotes.py`: model, database, aroma data, and dialog tests.
 - `snap/`: Snapcraft packaging and launcher assets.
@@ -124,11 +123,11 @@ Keep these version references synchronized:
 - `winenotes/__init__.py` (`__version__`)
 - `snap/snapcraft.yaml` (`version`)
 - `CHANGELOG.md` (Keep a Changelog format; use `## Develop` for unreleased work)
-- `RELEASES` in `winenotes/changelog_dialog.py`
-- Hard-coded release notes in `winenotes/app.py`
 
-The changelog test expects the published version strings to remain in
-`CHANGELOG.md`. Update that test when changing the supported release history.
+The in-app Changelog menu item links to `CHANGELOG.md` on GitHub; there is no
+separate in-app release history to maintain. The changelog test expects the
+published version strings to remain in `CHANGELOG.md`. Update that test when
+changing the supported release history.
 
 ## Quality Checklist
 
@@ -137,7 +136,8 @@ Before finishing a change:
 1. Run `python3 -m compileall -q winenotes tests`.
 2. Run `python3 -m unittest discover -s tests`.
 3. Manually smoke-test affected UI when possible, especially add/edit/delete,
-   search/filter, aroma wheel selection, import/export, stats, and changelog.
+   search/filter, aroma wheel selection, import/export, stats, and the
+   changelog link.
 4. If the schema changed, test against an existing database, not only a fresh
    one.
 5. Do not commit generated databases, exports, caches, or Snap build artifacts.
