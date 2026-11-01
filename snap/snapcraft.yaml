@@ -41,6 +41,8 @@ parts:
       - "-README.md"
       - "-CHANGELOG.md"
       - "-requirements.txt"
+      - "-AGENTS.md"
+      - "-.workshop"
       - "-__pycache__"
       - "-**/__pycache__"
       - "-*.pyc"

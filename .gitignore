@@ -19,3 +19,6 @@ __pycache__/
 /stage/
 /prime/
 /*.snap
+
+# Workshop files
+.workshop.lock
