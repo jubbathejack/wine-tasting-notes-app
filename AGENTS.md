@@ -75,6 +75,8 @@ there is no project config for them. Do not reformat unrelated files.
   `init_db()` rather than replacing a table.
 - Seed data must remain idempotent; `seed_samples()` already checks for existing
   wines.
+- `is_sample` marks seeded sample wines in SQLite. It is intentionally not part
+  of `Wine` or exports; use `insert(..., is_sample=True)` when restoring samples.
 - `aroma_notes` is stored as a JSON string in SQLite and exposed as `List[str]`
   on `Wine`.
 

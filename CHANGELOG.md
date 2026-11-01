@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [1.1.2] - 2026-11-02
 
+### Added
+- Added menu actions to add or remove the curated sample wines, with confirmation and undo for removal.
+
 ### Changed
 - Altered the contact form to link to github issues.
 - Removed the in-app changelog dialog and hard-coded About release notes; the menu now links to `CHANGELOG.md` on GitHub.

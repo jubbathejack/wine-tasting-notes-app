@@ -20,6 +20,7 @@ A GNOME desktop application for recording, rating, and managing personal wine ta
   - Style filter pills (Red, White, Rosé, Sparkling, Dessert, Fortified).
   - Multi-attribute sorting (Date tasted, Rating, Vintage, Alphabetical).
 - **Collection Statistics**: Overview of total wines tasted, average score, highest rated bottle, and style/country distribution.
+- **Sample Wine Management**: Add curated sample wines to explore the app, or remove them later without affecting your own notes.
 - **Import & Export**: Back up and move your tasting notes using standard JSON and CSV files.
 - **Accidental Deletion Protection**: Delete confirmation with instant toast undo.
 - **Desktop Integration**: Includes a `.desktop` launcher and scalable SVG icon for GNOME Shell. Snap packaging is provided in `snap/`.

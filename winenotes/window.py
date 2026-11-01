@@ -17,6 +17,7 @@ from winenotes.wine_detail import WineDetailView
 from winenotes.wine_dialog import WineDialog
 from winenotes.stats_dialog import StatsDialog
 from winenotes.aroma_dialog import AromaWheelDialog
+from winenotes.sample_data import SAMPLE_WINES
 
 CHANGELOG_URL = (
     "https://github.com/jubbathejack/wine-tasting-notes-app/blob/develop/CHANGELOG.md"
@@ -63,6 +64,8 @@ class MainWindow(Adw.ApplicationWindow):
         if self.db.count() == 0:
             self.db.seed_samples()
 
+        self._update_sample_actions()
+
         # Initial list load
         self.reload_wines()
 
@@ -90,7 +93,8 @@ class MainWindow(Adw.ApplicationWindow):
         menu = Gio.Menu.new()
         menu.append("Wine Aroma Wheel Reference", "win.show-aroma-wheel")
         menu.append("Collection Statistics", "win.show-stats")
-        menu.append("Seed Sample Wines", "win.seed-samples")
+        menu.append("Add Sample Wines", "win.seed-samples")
+        menu.append("Remove Sample Wines", "win.remove-samples")
 
         data_section = Gio.Menu.new()
         data_section.append("Export to JSON...", "win.export-json")
@@ -232,10 +236,19 @@ class MainWindow(Adw.ApplicationWindow):
         stats_action.connect("activate", lambda a, p: self.show_stats_dialog())
         self.add_action(stats_action)
 
-        # Action: Seed Samples
-        seed_action = Gio.SimpleAction.new("seed-samples", None)
-        seed_action.connect("activate", lambda a, p: self.seed_samples())
-        self.add_action(seed_action)
+        # Action: Add Samples
+        self._add_samples_action = Gio.SimpleAction.new("seed-samples", None)
+        self._add_samples_action.connect(
+            "activate", lambda a, p: self.seed_samples()
+        )
+        self.add_action(self._add_samples_action)
+
+        # Action: Remove Samples
+        self._remove_samples_action = Gio.SimpleAction.new("remove-samples", None)
+        self._remove_samples_action.connect(
+            "activate", lambda a, p: self.remove_samples()
+        )
+        self.add_action(self._remove_samples_action)
 
         # Action: Export JSON
         export_json_action = Gio.SimpleAction.new("export-json", None)
@@ -360,17 +373,22 @@ class MainWindow(Adw.ApplicationWindow):
         alert.present(self)
 
     def _delete_wine(self, wine: Wine):
+        was_sample = self.db.is_sample(wine.id)
         self._last_deleted_wine = wine
         self.db.delete(wine.id)
 
         def undo():
             if self._last_deleted_wine:
-                new_id = self.db.insert(self._last_deleted_wine)
+                new_id = self.db.insert(
+                    self._last_deleted_wine, is_sample=was_sample
+                )
                 self.show_toast(f"Restored '{self._last_deleted_wine.wine_name}'")
+                self._update_sample_actions()
                 self.reload_wines(select_id=new_id)
 
         self.show_toast(f"Deleted '{wine.wine_name}'", undo_callback=undo)
         self.selected_wine = None
+        self._update_sample_actions()
         self.reload_wines()
 
     def show_aroma_wheel_dialog(self):
@@ -392,12 +410,61 @@ class MainWindow(Adw.ApplicationWindow):
         dialog = StatsDialog(stats)
         dialog.present(self)
 
+    def _update_sample_actions(self):
+        sample_count = self.db.sample_count()
+        self._add_samples_action.set_enabled(sample_count < len(SAMPLE_WINES))
+        self._remove_samples_action.set_enabled(sample_count > 0)
+
     def seed_samples(self):
         count = self.db.seed_samples()
         if count > 0:
             self.show_toast(f"Added {count} sample wine tasting notes!")
         else:
             self.show_toast("Sample wines already exist in your collection.")
+        self._update_sample_actions()
+        self.reload_wines()
+
+    def remove_samples(self):
+        count = self.db.sample_count()
+        if count == 0:
+            self.show_toast("No sample wines to remove.")
+            return
+
+        noun = "note" if count == 1 else "notes"
+        alert = Adw.AlertDialog.new(
+            "Remove Sample Wines?",
+            f"Remove {count} sample wine tasting {noun} from your collection? This action can be undone.",
+        )
+        alert.add_response("cancel", "Cancel")
+        alert.add_response("remove", "Remove")
+        alert.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+
+        def on_alert_response(_dialog, response):
+            if response == "remove":
+                self._remove_samples()
+
+        alert.connect("response", on_alert_response)
+        alert.present(self)
+
+    def _remove_samples(self):
+        samples = self.db.remove_samples()
+        if not samples:
+            return
+
+        noun = "wine" if len(samples) == 1 else "wines"
+
+        def undo():
+            for wine in samples:
+                self.db.insert(wine, is_sample=True)
+            self.show_toast(f"Restored {len(samples)} sample {noun}")
+            self._update_sample_actions()
+            self.reload_wines()
+
+        self.show_toast(
+            f"Removed {len(samples)} sample {noun}", undo_callback=undo
+        )
+        self.selected_wine = None
+        self._update_sample_actions()
         self.reload_wines()
 
     def export_json_flow(self):

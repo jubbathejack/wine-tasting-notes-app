@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS wines (
     organic INTEGER DEFAULT 0,
     biodynamic INTEGER DEFAULT 0,
     aroma_notes TEXT DEFAULT '[]',
+    is_sample INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -83,21 +84,28 @@ class Database:
             cols = [col[1] for col in conn.execute("PRAGMA table_info(wines)").fetchall()]
             if "aroma_notes" not in cols:
                 conn.execute("ALTER TABLE wines ADD COLUMN aroma_notes TEXT DEFAULT '[]'")
+            if "is_sample" not in cols:
+                conn.execute("ALTER TABLE wines ADD COLUMN is_sample INTEGER DEFAULT 0")
+                for sample in SAMPLE_WINES:
+                    conn.execute(
+                        "UPDATE wines SET is_sample = 1 WHERE wine_name = ? AND winery = ?",
+                        (sample.wine_name, sample.winery),
+                    )
 
     def count(self) -> int:
         with self._get_connection() as conn:
             row = conn.execute("SELECT COUNT(*) FROM wines").fetchone()
             return row[0] if row else 0
 
-    def insert(self, wine: Wine) -> int:
+    def insert(self, wine: Wine, is_sample: bool = False) -> int:
         query = """
         INSERT INTO wines (
             wine_name, winery, country, region, sub_region, vintage,
             color_style, grape_variety, abv, price, tasting_date,
             rating, tasting_notes, serving_temperature, aging_potential,
             food_pairing, purchase_location, bottle_size, closure_type,
-            organic, biodynamic, aroma_notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            organic, biodynamic, aroma_notes, is_sample
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             wine.wine_name.strip(),
@@ -122,6 +130,7 @@ class Database:
             1 if wine.organic else 0,
             1 if wine.biodynamic else 0,
             json.dumps(wine.aroma_notes or []),
+            1 if is_sample else 0,
         )
         with self._get_connection() as conn:
             cur = conn.cursor()
@@ -275,13 +284,41 @@ class Database:
                 "top_grapes": top_grapes,
             }
 
+    def sample_count(self) -> int:
+        with self._get_connection() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM wines WHERE is_sample = 1"
+            ).fetchone()
+            return row[0] if row else 0
+
+    def is_sample(self, wine_id: int) -> bool:
+        with self._get_connection() as conn:
+            row = conn.execute(
+                "SELECT is_sample FROM wines WHERE id = ?", (wine_id,)
+            ).fetchone()
+            return bool(row and row[0])
+
+    def list_samples(self) -> List[Wine]:
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM wines WHERE is_sample = 1 ORDER BY id"
+            ).fetchall()
+            return [Wine.from_row(dict(row)) for row in rows]
+
+    def remove_samples(self) -> List[Wine]:
+        samples = self.list_samples()
+        if samples:
+            with self._get_connection() as conn:
+                conn.execute("DELETE FROM wines WHERE is_sample = 1")
+        return samples
+
     def seed_samples(self) -> int:
         count = 0
         for sample in SAMPLE_WINES:
             # Check if this wine already exists to prevent duplicate spam
             existing = self.list_wines(search=sample.wine_name)
             if not any(w.wine_name == sample.wine_name and w.winery == sample.winery for w in existing):
-                self.insert(sample)
+                self.insert(sample, is_sample=True)
                 count += 1
         return count
 

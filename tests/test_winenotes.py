@@ -77,6 +77,44 @@ class TestDatabaseOperations(unittest.TestCase):
         self.assertEqual(reseed_count, 0)
         self.assertEqual(self.db.count(), len(SAMPLE_WINES))
 
+    def test_remove_samples(self):
+        self.db.seed_samples()
+        self.assertEqual(self.db.sample_count(), len(SAMPLE_WINES))
+
+        removed = self.db.remove_samples()
+        self.assertEqual(len(removed), len(SAMPLE_WINES))
+        self.assertEqual(self.db.count(), 0)
+        self.assertEqual(self.db.sample_count(), 0)
+        self.assertEqual(self.db.remove_samples(), [])
+
+        # Samples can be added again after removal
+        self.assertEqual(self.db.seed_samples(), len(SAMPLE_WINES))
+        samples = self.db.list_samples()
+        self.assertTrue(self.db.is_sample(samples[0].id))
+
+        # Removing samples must not delete user-created wines
+        user_wine = Wine(
+            wine_name="My Cellar Red",
+            winery="Home Cellar",
+            country="Australia",
+            tasting_notes="Plummy and approachable.",
+            rating=88,
+        )
+        self.db.insert(user_wine)
+        removed = self.db.remove_samples()
+        self.assertEqual(len(removed), len(SAMPLE_WINES))
+        self.assertEqual(self.db.count(), 1)
+        self.assertEqual(self.db.list_wines()[0].wine_name, "My Cellar Red")
+        self.assertFalse(self.db.is_sample(self.db.list_wines()[0].id))
+
+    def test_existing_samples_are_marked_on_migration(self):
+        self.db.seed_samples()
+        with self.db._get_connection() as conn:
+            conn.execute("ALTER TABLE wines DROP COLUMN is_sample")
+
+        self.db.init_db()
+        self.assertEqual(self.db.sample_count(), len(SAMPLE_WINES))
+
     def test_insert_update_delete(self):
         wine = Wine(
             wine_name="Test Shiraz",
