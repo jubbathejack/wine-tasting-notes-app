@@ -1,7 +1,7 @@
 name: wine-tasting-notes
 title: Wine Tasting Notes
 base: core26
-version: '1.1.0'
+version: '1.1.1'
 summary: Record, rate, and review wine tasting notes
 description: |
   Wine Notes is an elegant GNOME desktop application for recording, rating,

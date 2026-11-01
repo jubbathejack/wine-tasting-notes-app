@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Develop
 
+### [1.1.1] - 2026-11-01
+
 ### Added
 - Snap packaging (`snap/snapcraft.yaml`) using the GNOME extension and its content snap for the PyGObject, Pycairo, GTK 4, and Libadwaita runtime, so the aroma wheel renders without host `python3-gi-cairo`.
 - Desktop launcher and application icon for the snap in `snap/gui/`.
+- Added `AGENTS.md` for AI assistant workflows and `.gitignore` to exclude Workshop files.
 
 ### Fixed
 - Aroma wheel segments bleeding into adjacent segments caused by stale Cairo path state from previous labels being connected into the next slice.

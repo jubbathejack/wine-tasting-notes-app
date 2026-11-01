@@ -75,6 +75,11 @@ class WineNotesApplication(Adw.Application):
         dialog.set_copyright("© 2026 Jack Parker")
         dialog.set_release_notes_version(__version__)
         dialog.set_release_notes(
+            "<p>Version 1.1.1 introduces snap packaging for easy installation and distribution:</p>"
+            "<ul>"
+            "<li>Snap packaging using the GNOME extension and its content snap for the PyGObject, Pycairo, GTK 4, and Libadwaita runtime.</li>"
+            "<li>Desktop launcher and application icon for the snap.</li>"
+            "</ul>"
             "<p>Version 1.1.0 introduces the interactive Wine Aroma &amp; Flavor Wheel:</p>"
             "<ul>"
             "<li>Visual 3-tier tasting wheel with 112 descriptors rendered in Cairo.</li>"
