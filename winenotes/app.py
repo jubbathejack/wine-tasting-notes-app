@@ -66,11 +66,14 @@ class WineNotesApplication(Adw.Application):
         dialog.set_application_icon(__app_id__)
         dialog.set_version(__version__)
         dialog.set_developer_name("Jack Parker")
-        dialog.set_developers(["Jack Parker <jack@jubba.org>"])
+        dialog.set_developers(["Jack Parker"])
         dialog.set_comments(
             "An elegant GNOME desktop application for recording, rating, and managing personal wine tasting notes."
         )
         dialog.set_website("https://github.com/jubbathejack/wine-tasting-notes-app")
+        dialog.set_issue_url(
+            "https://github.com/jubbathejack/wine-tasting-notes-app/issues"
+        )
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_copyright("© 2026 Jack Parker")
         dialog.set_release_notes_version(__version__)
