@@ -67,14 +67,18 @@ there is no project config for them. Do not reformat unrelated files.
   `WINE_NOTES_DB` overrides it.
 - SQLite runs in WAL mode. Use parameterized queries and the existing
   `_get_connection()` context manager.
-- The schema lives in `db.py`. If adding a column, update all relevant places:
-  `SCHEMA`, `Database.init_db()` migration, `insert()`, `update()`,
+- The schema lives in `db.py` and uses `PRAGMA user_version` for schema versioning.
+  If adding a column or table, update all relevant places:
+  `SCHEMA`, `Database.init_db()`, `insert()`, `update()`,
   export field lists, `Wine` fields, `Wine.from_row()`/`to_dict()`, UI forms,
   and tests.
-- Existing databases must keep working. Add backward-compatible migrations in
-  `init_db()` rather than replacing a table.
+- `wines` contains both tasted tasting notes (`in_cellar = 0`) and untasted cellar
+  inventory (`in_cellar = 1`). `rating`, `tasting_notes`, and `tasting_date` are
+  nullable for cellar wines.
+- `cellar_locations` stores persistent storage locations (e.g., "Basement Cellar")
+  to offer suggestion chips in the cellar form.
 - Seed data must remain idempotent; `seed_samples()` already checks for existing
-  wines.
+  wines and only targets tasted records.
 - `is_sample` marks seeded sample wines in SQLite. It is intentionally not part
   of `Wine` or exports; use `insert(..., is_sample=True)` when restoring samples.
 - `aroma_notes` is stored as a JSON string in SQLite and exposed as `List[str]`
@@ -82,10 +86,16 @@ there is no project config for them. Do not reformat unrelated files.
 
 ## Model Conventions
 
-- `Wine` is the single source of truth for tasting-note fields.
-- Ratings are integers from 0 to 100. Styles are defined by `COLOR_STYLES`;
-  closures by `CLOSURE_TYPES`.
+- `Wine` is the single source of truth for both tasting-note and cellar fields.
+- `in_cellar` indicates whether the bottle is in the cellar inventory (untasted).
+- Ratings are integers from 0 to 100, or `None` if untasted. Styles are defined
+  by `COLOR_STYLES`; closures by `CLOSURE_TYPES`.
+- Cellar fields on `Wine` include `bottles`, `storage_location`, `drink_from`,
+  `drink_until`, and `purchase_date`. Helper properties include
+  `drink_window_display` and `is_in_drink_window`.
 - Keep `validate()` messages user-facing and covered by tests when adding rules.
+  Cellar wines only require `wine_name`, `winery`, and `country`, whereas tasted
+  wines also require `rating` and `tasting_notes`.
 - Preserve `Wine.from_row()` tolerance for missing/legacy fields.
 
 ## GTK and UI Conventions
