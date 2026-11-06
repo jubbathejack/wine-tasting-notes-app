@@ -44,19 +44,32 @@ class WineRow(Gtk.ListBoxRow):
         origin_label.set_ellipsize(Pango.EllipsizeMode.END)
         vbox_left.append(origin_label)
 
-        if wine.aroma_notes:
-            aroma_preview = " • ".join(wine.aroma_notes[:3])
-            if len(wine.aroma_notes) > 3:
-                aroma_preview += f" (+{len(wine.aroma_notes) - 3})"
-            aroma_label = Gtk.Label(label=f"Aromas: {aroma_preview}", xalign=0.0)
-            aroma_label.add_css_class("caption")
-            aroma_label.add_css_class("dim-label")
-            aroma_label.set_ellipsize(Pango.EllipsizeMode.END)
-            vbox_left.append(aroma_label)
+        if wine.in_cellar:
+            cellar_info_parts = []
+            if wine.storage_location:
+                cellar_info_parts.append(f"📍 {wine.storage_location}")
+            if wine.drink_window_display:
+                cellar_info_parts.append(f"Drink: {wine.drink_window_display}")
+            if cellar_info_parts:
+                cellar_lbl = Gtk.Label(label=" · ".join(cellar_info_parts), xalign=0.0)
+                cellar_lbl.add_css_class("caption")
+                cellar_lbl.add_css_class("dim-label")
+                cellar_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+                vbox_left.append(cellar_lbl)
+        else:
+            if wine.aroma_notes:
+                aroma_preview = " • ".join(wine.aroma_notes[:3])
+                if len(wine.aroma_notes) > 3:
+                    aroma_preview += f" (+{len(wine.aroma_notes) - 3})"
+                aroma_label = Gtk.Label(label=f"Aromas: {aroma_preview}", xalign=0.0)
+                aroma_label.add_css_class("caption")
+                aroma_label.add_css_class("dim-label")
+                aroma_label.set_ellipsize(Pango.EllipsizeMode.END)
+                vbox_left.append(aroma_label)
 
         hbox.append(vbox_left)
 
-        # Right column: Style badge & Rating
+        # Right column: Style badge & Rating / Bottle Count
         vbox_right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         vbox_right.set_valign(Gtk.Align.CENTER)
         vbox_right.set_halign(Gtk.Align.END)
@@ -67,21 +80,28 @@ class WineRow(Gtk.ListBoxRow):
         style_badge.add_css_class(wine.style_badge_class)
         vbox_right.append(style_badge)
 
-        # Rating badge
-        rating_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        rating_box.set_halign(Gtk.Align.END)
-
-        rating_label = Gtk.Label(label=f"{wine.rating}")
-        rating_label.add_css_class("rating-pill")
-        if wine.rating >= 95:
-            rating_label.add_css_class("rating-pill-high")
-        elif wine.rating >= 90:
-            rating_label.add_css_class("rating-pill-mid")
+        if wine.in_cellar:
+            bottle_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+            bottle_box.set_halign(Gtk.Align.END)
+            bottle_label = Gtk.Label(label=f"🍾 {wine.bottles}")
+            bottle_label.add_css_class("cellar-pill")
+            bottle_box.append(bottle_label)
+            vbox_right.append(bottle_box)
         else:
-            rating_label.add_css_class("rating-pill-low")
-        rating_box.append(rating_label)
+            if wine.rating is not None:
+                rating_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+                rating_box.set_halign(Gtk.Align.END)
 
-        vbox_right.append(rating_box)
+                rating_label = Gtk.Label(label=f"{wine.rating}")
+                rating_label.add_css_class("rating-pill")
+                if wine.rating >= 95:
+                    rating_label.add_css_class("rating-pill-high")
+                elif wine.rating >= 90:
+                    rating_label.add_css_class("rating-pill-mid")
+                else:
+                    rating_label.add_css_class("rating-pill-low")
+                rating_box.append(rating_label)
+                vbox_right.append(rating_box)
+
         hbox.append(vbox_right)
-
         self.set_child(hbox)

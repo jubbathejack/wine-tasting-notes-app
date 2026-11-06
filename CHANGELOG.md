@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Develop
 
+### [1.2.0] - Develop
+
+### Added
+- **Cellar Inventory**: Track wines you own but haven't yet tasted.
+  - Separate Cellar view with a Collection / Cellar toggle in the sidebar.
+  - Cellar entries record bottle count, purchase date, drink window (from/until years), and storage location.
+  - Storage locations are remembered and offered as one-click suggestions for future cellar additions.
+  - "Mark as Tasted" action on a cellar wine opens the tasting dialog pre-filled with the wine's details; on save a tasting note is created and the cellar bottle count is decremented by one (the entry is removed when the last bottle is consumed).
+- **Purchase Date** field added to all wines (tasted and cellar).
+- **Redesigned database schema** (v2): `rating`, `tasting_notes`, and `tasting_date` are now properly nullable for untasted cellar wines; no sentinel values required.
+
 ### [1.1.2] - 2026-11-02
 
 ### Added

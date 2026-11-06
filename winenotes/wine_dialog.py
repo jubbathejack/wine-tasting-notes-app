@@ -1,11 +1,10 @@
 """
-Dialog for adding or editing a wine tasting note.
+Dialog for adding or editing a wine tasting note or cellar entry.
 """
 
 from __future__ import annotations
-from ast import List
 from datetime import date, datetime
-from typing import Optional, Callable
+from typing import Optional, Callable, Any, List
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -27,14 +26,22 @@ class WineDialog(Adw.Dialog):
         self,
         wine: Optional[Wine] = None,
         on_save: Optional[Callable[[Wine], None]] = None,
+        cellar_mode: bool = False,
+        db: Optional[Any] = None,
     ):
         super().__init__()
         self.wine = wine
         self.on_save = on_save
+        self.cellar_mode = cellar_mode
+        self.db = db
         self.is_edit = wine is not None
         self.aroma_keywords = list(wine.aroma_notes) if (self.is_edit and wine and wine.aroma_notes) else []
 
-        title = "Edit Wine Tasting Note" if self.is_edit else "New Wine Tasting Note"
+        if self.cellar_mode:
+            title = "Edit Cellar Entry" if self.is_edit else "Add Wine to Cellar"
+        else:
+            title = "Edit Wine Tasting Note" if self.is_edit else "New Wine Tasting Note"
+
         self.set_title(title)
         self.set_content_width(620)
         self.set_content_height(720)
@@ -66,29 +73,29 @@ class WineDialog(Adw.Dialog):
 
         self.name_row = Adw.EntryRow.new()
         self.name_row.set_title("Wine Name *")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.name_row.set_text(self.wine.wine_name)
         profile_grp.add(self.name_row)
 
         self.winery_row = Adw.EntryRow.new()
         self.winery_row.set_title("Winery / Producer *")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.winery_row.set_text(self.wine.winery)
         profile_grp.add(self.winery_row)
 
         self.grape_row = Adw.EntryRow.new()
         self.grape_row.set_title("Grape Variety (e.g. Pinot Noir, Cabernet)")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.grape_row.set_text(self.wine.grape_variety or "")
         profile_grp.add(self.grape_row)
 
         # Vintage spin row (1800 = NV)
         current_year = datetime.now().year
-        vintage_val = self.wine.vintage if (self.is_edit and self.wine.vintage) else current_year - 1
+        vintage_val = self.wine.vintage if (self.is_edit and self.wine and self.wine.vintage) else current_year - 1
         adj_vintage = Gtk.Adjustment.new(vintage_val, 1800, current_year + 2, 1, 5, 0)
         self.vintage_row = Adw.SpinRow.new(adj_vintage, 1, 0)
         self.vintage_row.set_title("Vintage (Set 1800 for Non-Vintage)")
-        if self.is_edit and self.wine.vintage is None:
+        if self.is_edit and self.wine and self.wine.vintage is None:
             self.vintage_row.set_value(1800)
         profile_grp.add(self.vintage_row)
 
@@ -97,7 +104,7 @@ class WineDialog(Adw.Dialog):
         self.style_row.set_title("Color and Style *")
         style_list = Gtk.StringList.new(COLOR_STYLES)
         self.style_row.set_model(style_list)
-        if self.is_edit and self.wine.color_style in COLOR_STYLES:
+        if self.is_edit and self.wine and self.wine.color_style in COLOR_STYLES:
             self.style_row.set_selected(COLOR_STYLES.index(self.wine.color_style))
         else:
             self.style_row.set_selected(0)
@@ -111,124 +118,189 @@ class WineDialog(Adw.Dialog):
 
         self.country_row = Adw.EntryRow.new()
         self.country_row.set_title("Country * (e.g. France, Italy, Spain)")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.country_row.set_text(self.wine.country)
         origin_grp.add(self.country_row)
 
         self.region_row = Adw.EntryRow.new()
         self.region_row.set_title("Region (e.g. Bordeaux, Piedmont, Napa Valley)")
-        if self.is_edit and self.wine.region:
+        if self.is_edit and self.wine and self.wine.region:
             self.region_row.set_text(self.wine.region)
         origin_grp.add(self.region_row)
 
         self.sub_region_row = Adw.EntryRow.new()
         self.sub_region_row.set_title("Sub-region / Appellation (e.g. Pauillac, Barolo)")
-        if self.is_edit and self.wine.sub_region:
+        if self.is_edit and self.wine and self.wine.sub_region:
             self.sub_region_row.set_text(self.wine.sub_region)
         origin_grp.add(self.sub_region_row)
 
         page.add(origin_grp)
 
-        # --- Group 3: Tasting & Evaluation ---
-        eval_grp = Adw.PreferencesGroup.new()
-        eval_grp.set_title("Tasting and Evaluation")
+        if self.cellar_mode:
+            # --- Cellar Details Group ---
+            cellar_details_grp = Adw.PreferencesGroup.new()
+            cellar_details_grp.set_title("Cellar Details")
 
-        rating_val = self.wine.rating if self.is_edit else 90
-        adj_rating = Gtk.Adjustment.new(rating_val, 0, 100, 1, 5, 0)
-        self.rating_row = Adw.SpinRow.new(adj_rating, 1, 0)
-        self.rating_row.set_title("Rating Score (0 - 100) *")
-        eval_grp.add(self.rating_row)
+            bottles_val = self.wine.bottles if (self.is_edit and self.wine) else 1
+            adj_bottles = Gtk.Adjustment.new(bottles_val, 1, 999, 1, 5, 0)
+            self.bottles_row = Adw.SpinRow.new(adj_bottles, 1, 0)
+            self.bottles_row.set_title("Bottles in Cellar *")
+            cellar_details_grp.add(self.bottles_row)
 
-        self.date_row = Adw.EntryRow.new()
-        self.date_row.set_title("Tasting Date (YYYY-MM-DD)")
-        default_date = self.wine.tasting_date if self.is_edit else date.today().isoformat()
-        self.date_row.set_text(default_date)
-        eval_grp.add(self.date_row)
+            self.storage_location_row = Adw.EntryRow.new()
+            self.storage_location_row.set_title("Storage Location (e.g. Basement Cellar, Kitchen Rack)")
+            if self.is_edit and self.wine and self.wine.storage_location:
+                self.storage_location_row.set_text(self.wine.storage_location)
+            cellar_details_grp.add(self.storage_location_row)
 
-        page.add(eval_grp)
+            # Location suggestion chips if any saved
+            if self.db:
+                known_locations = self.db.get_cellar_locations()
+                if known_locations:
+                    loc_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                    loc_box.set_margin_start(12)
+                    loc_box.set_margin_end(12)
+                    loc_box.set_margin_top(4)
+                    loc_box.set_margin_bottom(8)
 
-        # Tasting notes multiline text
-        notes_grp = Adw.PreferencesGroup.new()
-        notes_grp.set_title("Tasting Notes and Impressions *")
-        notes_grp.set_description("Describe appearance, nose/aroma, palate, tannins, acidity, and finish.")
+                    loc_hint = Gtk.Label(label="Recent / Saved locations:", xalign=0.0)
+                    loc_hint.add_css_class("caption")
+                    loc_hint.add_css_class("dim-label")
+                    loc_box.append(loc_hint)
 
-        self.notes_buffer = Gtk.TextBuffer.new()
-        if self.is_edit:
-            self.notes_buffer.set_text(self.wine.tasting_notes)
+                    chips_flow = Gtk.FlowBox.new()
+                    chips_flow.set_selection_mode(Gtk.SelectionMode.NONE)
+                    chips_flow.set_column_spacing(6)
+                    chips_flow.set_row_spacing(6)
 
-        notes_tv = Gtk.TextView.new_with_buffer(self.notes_buffer)
-        notes_tv.set_wrap_mode(Gtk.WrapMode.WORD)
-        notes_tv.set_top_margin(10)
-        notes_tv.set_bottom_margin(10)
-        notes_tv.set_left_margin(12)
-        notes_tv.set_right_margin(12)
+                    for loc in known_locations:
+                        btn = Gtk.Button(label=loc)
+                        btn.add_css_class("pill")
+                        btn.add_css_class("flat")
+                        btn.add_css_class("location-chip-btn")
+                        btn.connect("clicked", lambda b, text=loc: self.storage_location_row.set_text(text))
+                        chips_flow.append(btn)
 
-        scrolled_notes = Gtk.ScrolledWindow.new()
-        scrolled_notes.set_min_content_height(130)
-        scrolled_notes.set_child(notes_tv)
-        scrolled_notes.add_css_class("card")
-        notes_grp.add(scrolled_notes)
+                    loc_box.append(chips_flow)
+                    cellar_details_grp.add(loc_box)
 
-        page.add(notes_grp)
+            # Drink From / Drink Until (0 = Not set)
+            from_val = (self.wine.drink_from or 0) if (self.is_edit and self.wine) else 0
+            adj_from = Gtk.Adjustment.new(from_val, 0, 2100, 1, 5, 0)
+            self.drink_from_row = Adw.SpinRow.new(adj_from, 1, 0)
+            self.drink_from_row.set_title("Drink From (Year, 0 = unset)")
+            cellar_details_grp.add(self.drink_from_row)
 
-        # --- Aroma and Flavor Wheel Profile ---
-        aroma_grp = Adw.PreferencesGroup.new()
-        aroma_grp.set_title("Aroma and Flavor Wheel (Keywords)")
-        aroma_grp.set_description("Categorize what you tasted using the visual tasting wheel.")
+            until_val = (self.wine.drink_until or 0) if (self.is_edit and self.wine) else 0
+            adj_until = Gtk.Adjustment.new(until_val, 0, 2100, 1, 5, 0)
+            self.drink_until_row = Adw.SpinRow.new(adj_until, 1, 0)
+            self.drink_until_row.set_title("Drink Until (Year, 0 = unset)")
+            cellar_details_grp.add(self.drink_until_row)
 
-        wheel_row = Adw.ActionRow.new()
-        wheel_row.set_title("Tasting Wheel Descriptors")
-        wheel_row.set_subtitle("Pick structured flavor keywords to accompany your notes.")
+            page.add(cellar_details_grp)
 
-        open_wheel_btn = Gtk.Button.new_with_label("Open Tasting Wheel...")
-        open_wheel_btn.add_css_class("suggested-action")
-        open_wheel_btn.add_css_class("pill")
-        open_wheel_btn.set_valign(Gtk.Align.CENTER)
-        open_wheel_btn.connect("clicked", lambda b: self._open_aroma_wheel_dialog())
-        wheel_row.add_suffix(open_wheel_btn)
-        aroma_grp.add(wheel_row)
+        else:
+            # --- Group 3: Tasting & Evaluation ---
+            eval_grp = Adw.PreferencesGroup.new()
+            eval_grp.set_title("Tasting and Evaluation")
 
-        # Chips container
-        self.aroma_chips_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        self.aroma_chips_container.set_margin_top(8)
-        self.aroma_chips_container.set_margin_bottom(8)
-        self.aroma_chips_container.set_margin_start(12)
-        self.aroma_chips_container.set_margin_end(12)
+            rating_val = (self.wine.rating if self.wine and self.wine.rating is not None else 90) if self.is_edit else 90
+            adj_rating = Gtk.Adjustment.new(rating_val, 0, 100, 1, 5, 0)
+            self.rating_row = Adw.SpinRow.new(adj_rating, 1, 0)
+            self.rating_row.set_title("Rating Score (0 - 100) *")
+            eval_grp.add(self.rating_row)
 
-        self.aroma_flowbox = Gtk.FlowBox.new()
-        self.aroma_flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.aroma_flowbox.set_column_spacing(6)
-        self.aroma_flowbox.set_row_spacing(6)
-        self.aroma_chips_container.append(self.aroma_flowbox)
+            self.date_row = Adw.EntryRow.new()
+            self.date_row.set_title("Tasting Date (YYYY-MM-DD)")
+            default_date = (self.wine.tasting_date or date.today().isoformat()) if (self.is_edit and self.wine) else date.today().isoformat()
+            self.date_row.set_text(default_date)
+            eval_grp.add(self.date_row)
 
-        # Button to append keywords into tasting notes description
-        self.append_notes_btn = Gtk.Button.new_with_label("Append Keywords to Notes Description")
-        self.append_notes_btn.add_css_class("flat")
-        self.append_notes_btn.add_css_class("caption")
-        self.append_notes_btn.set_halign(Gtk.Align.START)
-        self.append_notes_btn.connect("clicked", lambda b: self._append_keywords_to_notes())
-        self.aroma_chips_container.append(self.append_notes_btn)
+            page.add(eval_grp)
 
-        aroma_grp.add(self.aroma_chips_container)
-        page.add(aroma_grp)
+            # Tasting notes multiline text
+            notes_grp = Adw.PreferencesGroup.new()
+            notes_grp.set_title("Tasting Notes and Impressions *")
+            notes_grp.set_description("Describe appearance, nose/aroma, palate, tannins, acidity, and finish.")
 
-        self._refresh_dialog_aroma_chips()
+            self.notes_buffer = Gtk.TextBuffer.new()
+            if self.is_edit and self.wine and self.wine.tasting_notes:
+                self.notes_buffer.set_text(self.wine.tasting_notes)
+
+            notes_tv = Gtk.TextView.new_with_buffer(self.notes_buffer)
+            notes_tv.set_wrap_mode(Gtk.WrapMode.WORD)
+            notes_tv.set_top_margin(10)
+            notes_tv.set_bottom_margin(10)
+            notes_tv.set_left_margin(12)
+            notes_tv.set_right_margin(12)
+
+            scrolled_notes = Gtk.ScrolledWindow.new()
+            scrolled_notes.set_min_content_height(130)
+            scrolled_notes.set_child(notes_tv)
+            scrolled_notes.add_css_class("card")
+            notes_grp.add(scrolled_notes)
+
+            page.add(notes_grp)
+
+            # --- Aroma and Flavor Wheel Profile ---
+            aroma_grp = Adw.PreferencesGroup.new()
+            aroma_grp.set_title("Aroma and Flavor Wheel (Keywords)")
+            aroma_grp.set_description("Categorize what you tasted using the visual tasting wheel.")
+
+            wheel_row = Adw.ActionRow.new()
+            wheel_row.set_title("Tasting Wheel Descriptors")
+            wheel_row.set_subtitle("Pick structured flavor keywords to accompany your notes.")
+
+            open_wheel_btn = Gtk.Button.new_with_label("Open Tasting Wheel...")
+            open_wheel_btn.add_css_class("suggested-action")
+            open_wheel_btn.add_css_class("pill")
+            open_wheel_btn.set_valign(Gtk.Align.CENTER)
+            open_wheel_btn.connect("clicked", lambda b: self._open_aroma_wheel_dialog())
+            wheel_row.add_suffix(open_wheel_btn)
+            aroma_grp.add(wheel_row)
+
+            # Chips container
+            self.aroma_chips_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            self.aroma_chips_container.set_margin_top(8)
+            self.aroma_chips_container.set_margin_bottom(8)
+            self.aroma_chips_container.set_margin_start(12)
+            self.aroma_chips_container.set_margin_end(12)
+
+            self.aroma_flowbox = Gtk.FlowBox.new()
+            self.aroma_flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+            self.aroma_flowbox.set_column_spacing(6)
+            self.aroma_flowbox.set_row_spacing(6)
+            self.aroma_chips_container.append(self.aroma_flowbox)
+
+            # Button to append keywords into tasting notes description
+            self.append_notes_btn = Gtk.Button.new_with_label("Append Keywords to Notes Description")
+            self.append_notes_btn.add_css_class("flat")
+            self.append_notes_btn.add_css_class("caption")
+            self.append_notes_btn.set_halign(Gtk.Align.START)
+            self.append_notes_btn.connect("clicked", lambda b: self._append_keywords_to_notes())
+            self.aroma_chips_container.append(self.append_notes_btn)
+
+            aroma_grp.add(self.aroma_chips_container)
+            page.add(aroma_grp)
+
+            self._refresh_dialog_aroma_chips()
 
         # --- Group 4: Technical Specifications ---
         tech_grp = Adw.PreferencesGroup.new()
         tech_grp.set_title("Technical and Service Details")
 
-        abv_val = self.wine.abv if (self.is_edit and self.wine.abv is not None) else 13.5
+        abv_val = self.wine.abv if (self.is_edit and self.wine and self.wine.abv is not None) else 13.5
         adj_abv = Gtk.Adjustment.new(abv_val, 0.0, 30.0, 0.5, 1.0, 0)
         self.abv_row = Adw.SpinRow.new(adj_abv, 0.5, 1)
         self.abv_row.set_title("Alcohol by Volume (% ABV)")
         tech_grp.add(self.abv_row)
 
-        temp_val = self.wine.serving_temperature if (self.is_edit and self.wine.serving_temperature is not None) else 16
-        adj_temp = Gtk.Adjustment.new(temp_val, 0, 30, 1, 2, 0)
-        self.temp_row = Adw.SpinRow.new(adj_temp, 1, 0)
-        self.temp_row.set_title("Serving Temperature (°C)")
-        tech_grp.add(self.temp_row)
+        if not self.cellar_mode:
+            temp_val = self.wine.serving_temperature if (self.is_edit and self.wine and self.wine.serving_temperature is not None) else 16
+            adj_temp = Gtk.Adjustment.new(temp_val, 0, 30, 1, 2, 0)
+            self.temp_row = Adw.SpinRow.new(adj_temp, 1, 0)
+            self.temp_row.set_title("Serving Temperature (°C)")
+            tech_grp.add(self.temp_row)
 
         # Bottle Size
         self.size_row = Adw.ComboRow.new()
@@ -236,7 +308,7 @@ class WineDialog(Adw.Dialog):
         size_list = Gtk.StringList.new([label for label, _ in BOTTLE_SIZES])
         self.size_row.set_model(size_list)
         selected_size_idx = 0
-        if self.is_edit and self.wine.bottle_size:
+        if self.is_edit and self.wine and self.wine.bottle_size:
             for idx, (_, val) in enumerate(BOTTLE_SIZES):
                 if abs(val - self.wine.bottle_size) < 0.01:
                     selected_size_idx = idx
@@ -249,7 +321,7 @@ class WineDialog(Adw.Dialog):
         self.closure_row.set_title("Closure Type")
         closure_list = Gtk.StringList.new(CLOSURE_TYPES)
         self.closure_row.set_model(closure_list)
-        if self.is_edit and self.wine.closure_type in CLOSURE_TYPES:
+        if self.is_edit and self.wine and self.wine.closure_type in CLOSURE_TYPES:
             self.closure_row.set_selected(CLOSURE_TYPES.index(self.wine.closure_type))
         else:
             self.closure_row.set_selected(0)
@@ -257,43 +329,49 @@ class WineDialog(Adw.Dialog):
 
         self.organic_row = Adw.SwitchRow.new()
         self.organic_row.set_title("Certified Organic")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.organic_row.set_active(self.wine.organic)
         tech_grp.add(self.organic_row)
 
         self.biodynamic_row = Adw.SwitchRow.new()
         self.biodynamic_row.set_title("Certified Biodynamic")
-        if self.is_edit:
+        if self.is_edit and self.wine:
             self.biodynamic_row.set_active(self.wine.biodynamic)
         tech_grp.add(self.biodynamic_row)
 
         page.add(tech_grp)
 
-        # --- Group 5: Cellar & Food Pairing ---
+        # --- Group 5: Cellar & Food Pairing & Purchase ---
         cellar_grp = Adw.PreferencesGroup.new()
         cellar_grp.set_title("Cellar, Food Pairing and Purchase")
 
         self.price_row = Adw.EntryRow.new()
         self.price_row.set_title("Price Paid")
-        if self.is_edit and self.wine.price is not None:
+        if self.is_edit and self.wine and self.wine.price is not None:
             self.price_row.set_text(f"{self.wine.price:.2f}")
         cellar_grp.add(self.price_row)
 
+        self.purchase_date_row = Adw.EntryRow.new()
+        self.purchase_date_row.set_title("Purchase Date (YYYY-MM-DD)")
+        if self.is_edit and self.wine and self.wine.purchase_date:
+            self.purchase_date_row.set_text(self.wine.purchase_date)
+        cellar_grp.add(self.purchase_date_row)
+
         self.location_row = Adw.EntryRow.new()
         self.location_row.set_title("Purchase Location / Merchant")
-        if self.is_edit and self.wine.purchase_location:
+        if self.is_edit and self.wine and self.wine.purchase_location:
             self.location_row.set_text(self.wine.purchase_location)
         cellar_grp.add(self.location_row)
 
         self.aging_row = Adw.EntryRow.new()
         self.aging_row.set_title("Aging Potential (e.g. 2026 - 2040)")
-        if self.is_edit and self.wine.aging_potential:
+        if self.is_edit and self.wine and self.wine.aging_potential:
             self.aging_row.set_text(self.wine.aging_potential)
         cellar_grp.add(self.aging_row)
 
         self.pairing_row = Adw.EntryRow.new()
         self.pairing_row.set_title("Food Pairing Suggestions")
-        if self.is_edit and self.wine.food_pairing:
+        if self.is_edit and self.wine and self.wine.food_pairing:
             self.pairing_row.set_text(self.wine.food_pairing)
         cellar_grp.add(self.pairing_row)
 
@@ -314,10 +392,6 @@ class WineDialog(Adw.Dialog):
         winery = self.winery_row.get_text().strip()
         country = self.country_row.get_text().strip()
 
-        start_iter = self.notes_buffer.get_start_iter()
-        end_iter = self.notes_buffer.get_end_iter()
-        notes = self.notes_buffer.get_text(start_iter, end_iter, True).strip()
-
         # Basic validations
         if not name:
             self._show_toast("Please enter a Wine Name.")
@@ -334,9 +408,14 @@ class WineDialog(Adw.Dialog):
             self.country_row.grab_focus()
             return
 
-        if not notes:
-            self._show_toast("Please provide your Tasting Notes.")
-            return
+        notes = None
+        if not self.cellar_mode:
+            start_iter = self.notes_buffer.get_start_iter()
+            end_iter = self.notes_buffer.get_end_iter()
+            notes = self.notes_buffer.get_text(start_iter, end_iter, True).strip()
+            if not notes:
+                self._show_toast("Please provide your Tasting Notes.")
+                return
 
         # Parse vintage
         vintage_raw = int(self.vintage_row.get_value())
@@ -365,12 +444,31 @@ class WineDialog(Adw.Dialog):
                 self.price_row.grab_focus()
                 return
 
-        # Rating and date
-        rating = int(self.rating_row.get_value())
-        tasting_date = self.date_row.get_text().strip() or date.today().isoformat()
+        purchase_date = self.purchase_date_row.get_text().strip() or None
 
-        # Construct Wine object
-        wine_id = self.wine.id if self.is_edit else None
+        # Rating, date, serving temp, cellar fields
+        if self.cellar_mode:
+            rating = None
+            tasting_date = None
+            serving_temperature = None
+            aroma_notes = []
+            bottles = int(self.bottles_row.get_value())
+            storage_location = self.storage_location_row.get_text().strip() or None
+            d_from_raw = int(self.drink_from_row.get_value())
+            drink_from = d_from_raw if d_from_raw > 0 else None
+            d_until_raw = int(self.drink_until_row.get_value())
+            drink_until = d_until_raw if d_until_raw > 0 else None
+        else:
+            rating = int(self.rating_row.get_value())
+            tasting_date = self.date_row.get_text().strip() or date.today().isoformat()
+            serving_temperature = int(self.temp_row.get_value())
+            aroma_notes = list(self.aroma_keywords)
+            bottles = 1
+            storage_location = None
+            drink_from = None
+            drink_until = None
+
+        wine_id = self.wine.id if (self.is_edit and self.wine) else None
 
         saved_wine = Wine(
             id=wine_id,
@@ -384,18 +482,24 @@ class WineDialog(Adw.Dialog):
             grape_variety=self.grape_row.get_text().strip(),
             abv=float(self.abv_row.get_value()),
             price=price,
+            purchase_location=self.location_row.get_text().strip() or None,
+            purchase_date=purchase_date,
             tasting_date=tasting_date,
             rating=rating,
             tasting_notes=notes,
-            serving_temperature=int(self.temp_row.get_value()),
+            serving_temperature=serving_temperature,
             aging_potential=self.aging_row.get_text().strip() or None,
             food_pairing=self.pairing_row.get_text().strip() or None,
-            purchase_location=self.location_row.get_text().strip() or None,
             bottle_size=bottle_size,
             closure_type=closure_type,
             organic=self.organic_row.get_active(),
             biodynamic=self.biodynamic_row.get_active(),
-            aroma_notes=list(self.aroma_keywords),
+            aroma_notes=aroma_notes,
+            in_cellar=self.cellar_mode,
+            bottles=bottles,
+            storage_location=storage_location,
+            drink_from=drink_from,
+            drink_until=drink_until,
         )
 
         validation_errors = saved_wine.validate()
@@ -423,6 +527,8 @@ class WineDialog(Adw.Dialog):
         dlg.present(self)
 
     def _refresh_dialog_aroma_chips(self):
+        if not hasattr(self, 'aroma_flowbox'):
+            return
         while child := self.aroma_flowbox.get_first_child():
             self.aroma_flowbox.remove(child)
 

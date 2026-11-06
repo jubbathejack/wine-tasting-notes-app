@@ -35,6 +35,175 @@ class WineDetailView(Gtk.ScrolledWindow):
         while child := self.main_box.get_first_child():
             self.main_box.remove(child)
 
+        if wine.in_cellar:
+            self._display_cellar_wine(wine)
+        else:
+            self._display_tasted_wine(wine)
+
+    def _display_cellar_wine(self, wine: Wine):
+        # 1. Header Card (Hero)
+        header_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        header_card.add_css_class("card")
+        header_card.set_margin_bottom(6)
+        header_card.set_margin_top(4)
+
+        header_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        header_inner.set_margin_top(20)
+        header_inner.set_margin_bottom(20)
+        header_inner.set_margin_start(20)
+        header_inner.set_margin_end(20)
+
+        # Title & Bottle Count row
+        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+
+        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        title_box.set_hexpand(True)
+
+        name_label = Gtk.Label(label=wine.wine_name, xalign=0.0)
+        name_label.add_css_class("title-1")
+        name_label.set_wrap(True)
+        name_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        title_box.append(name_label)
+
+        sub_label = Gtk.Label(
+            label=f"{wine.winery} · {wine.vintage_display}",
+            xalign=0.0,
+        )
+        sub_label.add_css_class("title-3")
+        sub_label.add_css_class("dim-label")
+        title_box.append(sub_label)
+
+        top_row.append(title_box)
+
+        # Big Bottle Count
+        bottle_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        bottle_box.set_valign(Gtk.Align.CENTER)
+        bottle_box.set_halign(Gtk.Align.END)
+
+        noun = "Bottle" if wine.bottles == 1 else "Bottles"
+        bottle_num = Gtk.Label(label=f"🍾 {wine.bottles} {noun}")
+        bottle_num.add_css_class("cellar-pill")
+        bottle_box.append(bottle_num)
+
+        top_row.append(bottle_box)
+        header_inner.append(top_row)
+
+        # Badges & Tag strip
+        tag_strip = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        tag_strip.set_margin_top(4)
+
+        style_badge = Gtk.Label(label=wine.color_style)
+        style_badge.add_css_class("style-badge")
+        style_badge.add_css_class(wine.style_badge_class)
+        tag_strip.append(style_badge)
+
+        if wine.drink_window_display:
+            window_badge = Gtk.Label(label=f"Best: {wine.drink_window_display}")
+            window_badge.add_css_class("cellar-drink-window")
+            tag_strip.append(window_badge)
+
+        if wine.is_in_drink_window:
+            ready_badge = Gtk.Label(label="✨ Ready to Drink")
+            ready_badge.add_css_class("cellar-ready")
+            tag_strip.append(ready_badge)
+
+        if wine.organic:
+            org_pill = Gtk.Label(label="🌱 Organic")
+            org_pill.add_css_class("eco-pill")
+            tag_strip.append(org_pill)
+
+        if wine.biodynamic:
+            bio_pill = Gtk.Label(label="✨ Biodynamic")
+            bio_pill.add_css_class("eco-pill")
+            tag_strip.append(bio_pill)
+
+        header_inner.append(tag_strip)
+        header_card.append(header_inner)
+        self.main_box.append(header_card)
+
+        # 2. Cellar Inventory Details Group
+        cellar_group = Adw.PreferencesGroup.new()
+        cellar_group.set_title("Cellar Inventory")
+
+        self._add_row(cellar_group, "Bottles in Cellar", str(wine.bottles))
+        if wine.storage_location:
+            self._add_row(cellar_group, "Storage Location", wine.storage_location)
+        if wine.drink_window_display:
+            self._add_row(cellar_group, "Drinking Window", wine.drink_window_display)
+        if wine.purchase_date:
+            self._add_row(cellar_group, "Purchase Date", wine.purchase_date)
+        if wine.created_at:
+            date_only = wine.created_at.split()[0] if " " in wine.created_at else wine.created_at
+            self._add_row(cellar_group, "Added to Cellar", date_only)
+
+        self.main_box.append(cellar_group)
+
+        # 3. Wine Profile Group
+        profile_group = Adw.PreferencesGroup.new()
+        profile_group.set_title("Wine Profile and Terroir")
+
+        self._add_row(profile_group, "Winery / Producer", wine.winery)
+        if wine.grape_variety:
+            self._add_row(profile_group, "Grape Variety", wine.grape_variety)
+        if wine.vintage:
+            self._add_row(profile_group, "Vintage", str(wine.vintage))
+        self._add_row(profile_group, "Country", wine.country)
+        if wine.region:
+            self._add_row(profile_group, "Region", wine.region)
+        if wine.sub_region:
+            self._add_row(profile_group, "Sub-region / Appellation", wine.sub_region)
+
+        self.main_box.append(profile_group)
+
+        # 4. Specifications Group
+        specs_group = Adw.PreferencesGroup.new()
+        specs_group.set_title("Specifications")
+
+        self._add_row(specs_group, "Color and Style", wine.color_style)
+
+        if wine.abv is not None:
+            self._add_row(specs_group, "Alcohol by Volume (ABV)", f"{wine.abv:.1f}%")
+
+        if wine.bottle_size is not None:
+            size_str = f"{wine.bottle_size} L"
+            if wine.bottle_size == 0.75:
+                size_str += " (Standard 750ml)"
+            elif wine.bottle_size == 1.5:
+                size_str += " (Magnum)"
+            self._add_row(specs_group, "Bottle Size", size_str)
+
+        if wine.closure_type:
+            self._add_row(specs_group, "Closure Type", wine.closure_type)
+
+        farming = []
+        if wine.organic:
+            farming.append("Certified Organic")
+        if wine.biodynamic:
+            farming.append("Certified Biodynamic")
+        if farming:
+            self._add_row(specs_group, "Farming Practices", " · ".join(farming))
+
+        self.main_box.append(specs_group)
+
+        # 5. Purchase & Food Pairing Group
+        purchase_group = Adw.PreferencesGroup.new()
+        purchase_group.set_title("Cellar, Food Pairing and Purchase")
+
+        if wine.food_pairing:
+            self._add_row(purchase_group, "Food Pairing Recommendations", wine.food_pairing)
+
+        if wine.aging_potential:
+            self._add_row(purchase_group, "Aging Potential", wine.aging_potential)
+
+        if wine.purchase_location:
+            self._add_row(purchase_group, "Purchased From", wine.purchase_location)
+
+        if wine.price is not None:
+            self._add_row(purchase_group, "Price Paid", f"£{wine.price:.2f}" if wine.price > 0 else "N/A")
+
+        self.main_box.append(purchase_group)
+
+    def _display_tasted_wine(self, wine: Wine):
         # 1. Header Card (Hero)
         header_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         header_card.add_css_class("card")
@@ -70,26 +239,28 @@ class WineDetailView(Gtk.ScrolledWindow):
         top_row.append(title_box)
 
         # Big Rating Score
-        score_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        score_box.set_valign(Gtk.Align.CENTER)
-        score_box.set_halign(Gtk.Align.END)
+        if wine.rating is not None:
+            score_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            score_box.set_valign(Gtk.Align.CENTER)
+            score_box.set_halign(Gtk.Align.END)
 
-        score_num = Gtk.Label(label=f"{wine.rating}")
-        score_num.add_css_class("rating-pill")
-        if wine.rating >= 95:
-            score_num.add_css_class("rating-pill-high")
-        elif wine.rating >= 90:
-            score_num.add_css_class("rating-pill-mid")
-        else:
-            score_num.add_css_class("rating-pill-low")
-        score_box.append(score_num)
+            score_num = Gtk.Label(label=f"{wine.rating}")
+            score_num.add_css_class("rating-pill")
+            if wine.rating >= 95:
+                score_num.add_css_class("rating-pill-high")
+            elif wine.rating >= 90:
+                score_num.add_css_class("rating-pill-mid")
+            else:
+                score_num.add_css_class("rating-pill-low")
+            score_box.append(score_num)
 
-        stars_label = Gtk.Label(label=wine.rating_stars)
-        stars_label.add_css_class("caption")
-        stars_label.add_css_class("dim-label")
-        score_box.append(stars_label)
+            stars_label = Gtk.Label(label=wine.rating_stars)
+            stars_label.add_css_class("caption")
+            stars_label.add_css_class("dim-label")
+            score_box.append(stars_label)
 
-        top_row.append(score_box)
+            top_row.append(score_box)
+
         header_inner.append(top_row)
 
         # Badges & Tag strip
@@ -101,10 +272,11 @@ class WineDetailView(Gtk.ScrolledWindow):
         style_badge.add_css_class(wine.style_badge_class)
         tag_strip.append(style_badge)
 
-        level_badge = Gtk.Label(label=wine.rating_level)
-        level_badge.add_css_class("caption")
-        level_badge.add_css_class("dim-label")
-        tag_strip.append(level_badge)
+        if wine.rating_level:
+            level_badge = Gtk.Label(label=wine.rating_level)
+            level_badge.add_css_class("caption")
+            level_badge.add_css_class("dim-label")
+            tag_strip.append(level_badge)
 
         if wine.organic:
             org_pill = Gtk.Label(label="🌱 Organic")
@@ -121,21 +293,23 @@ class WineDetailView(Gtk.ScrolledWindow):
         self.main_box.append(header_card)
 
         # 2. Tasting Notes Callout
-        notes_group = Adw.PreferencesGroup.new()
-        notes_group.set_title("Tasting Notes and Impressions")
-        notes_group.set_description(f"Tasted on {wine.tasting_date}")
+        if wine.tasting_notes:
+            notes_group = Adw.PreferencesGroup.new()
+            notes_group.set_title("Tasting Notes and Impressions")
+            tasted_date_str = f"Tasted on {wine.tasting_date}" if wine.tasting_date else "Tasted"
+            notes_group.set_description(tasted_date_str)
 
-        notes_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        notes_box.add_css_class("tasting-note-box")
+            notes_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            notes_box.add_css_class("tasting-note-box")
 
-        notes_label = Gtk.Label(label=wine.tasting_notes, xalign=0.0)
-        notes_label.set_wrap(True)
-        notes_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-        notes_label.set_selectable(True)
-        notes_box.append(notes_label)
+            notes_label = Gtk.Label(label=wine.tasting_notes, xalign=0.0)
+            notes_label.set_wrap(True)
+            notes_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            notes_label.set_selectable(True)
+            notes_box.append(notes_label)
 
-        notes_group.add(notes_box)
-        self.main_box.append(notes_group)
+            notes_group.add(notes_box)
+            self.main_box.append(notes_group)
 
         # 3. Aroma and Flavor Wheel Keywords
         aroma_group = Adw.PreferencesGroup.new()
@@ -212,7 +386,7 @@ class WineDetailView(Gtk.ScrolledWindow):
 
         self.main_box.append(profile_group)
 
-        # 4. Specifications & Service Group
+        # 5. Specifications & Service Group
         specs_group = Adw.PreferencesGroup.new()
         specs_group.set_title("Specifications and Service")
 
@@ -245,7 +419,7 @@ class WineDetailView(Gtk.ScrolledWindow):
 
         self.main_box.append(specs_group)
 
-        # 5. Cellar, Purchase & Food Pairing
+        # 6. Cellar, Purchase & Food Pairing
         cellar_group = Adw.PreferencesGroup.new()
         cellar_group.set_title("Cellar, Food Pairing and Purchase")
 
@@ -258,10 +432,14 @@ class WineDetailView(Gtk.ScrolledWindow):
         if wine.purchase_location:
             self._add_row(cellar_group, "Purchased From", wine.purchase_location)
 
+        if wine.purchase_date:
+            self._add_row(cellar_group, "Purchase Date", wine.purchase_date)
+
         if wine.price is not None:
             self._add_row(cellar_group, "Price Paid", f"£{wine.price:.2f}" if wine.price > 0 else "N/A")
 
-        self._add_row(cellar_group, "Tasted On", wine.tasting_date)
+        if wine.tasting_date:
+            self._add_row(cellar_group, "Tasted On", wine.tasting_date)
 
         self.main_box.append(cellar_group)
 
@@ -282,4 +460,3 @@ class WineDetailView(Gtk.ScrolledWindow):
             dlg.present(root)
         else:
             dlg.present()
-

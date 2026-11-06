@@ -52,6 +52,44 @@ class TestWineModels(unittest.TestCase):
         self.assertEqual(reconstructed.organic, sample.organic)
         self.assertEqual(reconstructed.biodynamic, sample.biodynamic)
 
+    def test_cellar_wine_creation_and_validation(self):
+        cellar_wine = Wine(
+            wine_name="Penfolds Grange",
+            winery="Penfolds",
+            country="Australia",
+            in_cellar=True,
+            bottles=3,
+            drink_from=2028,
+            drink_until=2040,
+            storage_location="Basement Cellar",
+        )
+        self.assertEqual(cellar_wine.bottles, 3)
+        self.assertEqual(cellar_wine.drink_window_display, "2028–2040")
+        self.assertIsNone(cellar_wine.rating)
+        self.assertIsNone(cellar_wine.tasting_notes)
+        self.assertEqual(cellar_wine.validate(), [])
+
+    def test_cellar_validation_requires_name_winery_country(self):
+        wine = Wine(wine_name="", winery="", country="", in_cellar=True)
+        errors = wine.validate()
+        self.assertTrue(any("Wine name is required" in e for e in errors))
+        self.assertTrue(any("Winery" in e for e in errors))
+        self.assertTrue(any("Country" in e for e in errors))
+        # rating and tasting_notes NOT required for cellar wine
+        self.assertFalse(any("Rating" in e for e in errors))
+        self.assertFalse(any("notes" in e for e in errors))
+
+    def test_drink_window_display(self):
+        w = Wine(wine_name="X", winery="Y", country="Z", drink_from=2026, drink_until=2030)
+        self.assertEqual(w.drink_window_display, "2026–2030")
+        w2 = Wine(wine_name="X", winery="Y", country="Z", drink_from=2026)
+        self.assertEqual(w2.drink_window_display, "From 2026")
+        w3 = Wine(wine_name="X", winery="Y", country="Z", drink_until=2030)
+        self.assertEqual(w3.drink_window_display, "Until 2030")
+        w4 = Wine(wine_name="X", winery="Y", country="Z")
+        self.assertEqual(w4.drink_window_display, "")
+
+
 class TestDatabaseOperations(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
@@ -66,6 +104,8 @@ class TestDatabaseOperations(unittest.TestCase):
         stats = self.db.get_stats()
         self.assertEqual(stats["total"], 0)
         self.assertEqual(stats["avg_rating"], 0.0)
+        self.assertEqual(stats["cellar_count"], 0)
+        self.assertEqual(stats["cellar_bottles"], 0)
 
     def test_seed_samples(self):
         count = self.db.seed_samples()
@@ -107,13 +147,10 @@ class TestDatabaseOperations(unittest.TestCase):
         self.assertEqual(self.db.list_wines()[0].wine_name, "My Cellar Red")
         self.assertFalse(self.db.is_sample(self.db.list_wines()[0].id))
 
-    def test_existing_samples_are_marked_on_migration(self):
-        self.db.seed_samples()
+    def test_schema_version_initialization(self):
         with self.db._get_connection() as conn:
-            conn.execute("ALTER TABLE wines DROP COLUMN is_sample")
-
-        self.db.init_db()
-        self.assertEqual(self.db.sample_count(), len(SAMPLE_WINES))
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            self.assertEqual(version, 2)
 
     def test_insert_update_delete(self):
         wine = Wine(
@@ -213,6 +250,70 @@ class TestDatabaseOperations(unittest.TestCase):
         updated = self.db.get_by_id(wine_id)
         self.assertEqual(updated.aroma_notes, ["Black Pepper", "Vanilla"])
 
+    def test_cellar_insert_list_and_locations(self):
+        cellar_wine = Wine(
+            wine_name="Opus One",
+            winery="Opus One Winery",
+            country="USA",
+            in_cellar=True,
+            bottles=2,
+            storage_location="Basement Cellar",
+            drink_from=2027,
+            drink_until=2038,
+        )
+        wine_id = self.db.insert(cellar_wine, in_cellar=True)
+        self.assertIsNotNone(wine_id)
+
+        # Should appear in cellar list, not in tasted list
+        cellar = self.db.list_cellar()
+        tasted = self.db.list_tasted()
+        self.assertEqual(len(cellar), 1)
+        self.assertEqual(len(tasted), 0)
+        self.assertEqual(cellar[0].wine_name, "Opus One")
+        self.assertEqual(cellar[0].bottles, 2)
+        self.assertEqual(cellar[0].storage_location, "Basement Cellar")
+
+        # Location should be persisted in cellar_locations
+        locations = self.db.get_cellar_locations()
+        self.assertIn("Basement Cellar", locations)
+
+    def test_decrement_or_delete_cellar(self):
+        wine = Wine(wine_name="A", winery="B", country="C", in_cellar=True, bottles=2)
+        wine_id = self.db.insert(wine, in_cellar=True)
+
+        remaining = self.db.decrement_or_delete_cellar(wine_id)
+        self.assertEqual(remaining, 1)
+        fetched = self.db.get_by_id(wine_id)
+        self.assertEqual(fetched.bottles, 1)
+
+        remaining = self.db.decrement_or_delete_cellar(wine_id)
+        self.assertEqual(remaining, 0)
+        self.assertIsNone(self.db.get_by_id(wine_id))
+
+    def test_cellar_stats(self):
+        cellar_wine = Wine(wine_name="A", winery="B", country="C", in_cellar=True, bottles=3)
+        self.db.insert(cellar_wine, in_cellar=True)
+        tasted_wine = Wine(wine_name="D", winery="E", country="F", rating=90, tasting_notes="Good.", tasting_date="2026-01-01")
+        self.db.insert(tasted_wine)
+
+        stats = self.db.get_stats()
+        self.assertEqual(stats["total"], 1)
+        self.assertEqual(stats["cellar_count"], 1)
+        self.assertEqual(stats["cellar_bottles"], 3)
+
+    def test_mark_as_tasted_flow(self):
+        cellar_wine = Wine(wine_name="A", winery="B", country="C", in_cellar=True, bottles=2)
+        cellar_id = self.db.insert(cellar_wine, in_cellar=True)
+
+        tasted = Wine(wine_name="A", winery="B", country="C", rating=92, tasting_notes="Excellent.", tasting_date="2026-11-01")
+        self.db.insert(tasted)
+        remaining = self.db.decrement_or_delete_cellar(cellar_id)
+        self.assertEqual(remaining, 1)
+
+        self.assertEqual(len(self.db.list_tasted()), 1)
+        self.assertEqual(len(self.db.list_cellar()), 1)
+        self.assertEqual(self.db.get_by_id(cellar_id).bottles, 1)
+
 
 class TestAromaWheelData(unittest.TestCase):
     def test_aroma_wheel_taxonomy(self):
@@ -274,5 +375,3 @@ class TestAromaWheelWidgets(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

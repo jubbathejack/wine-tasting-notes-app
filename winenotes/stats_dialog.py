@@ -1,5 +1,5 @@
 """
-Statistics dialog summarizing wine collection and tasting metrics.
+Statistics dialog summarizing wine collection, cellar, and tasting metrics.
 """
 
 from __future__ import annotations
@@ -27,13 +27,29 @@ class StatsDialog(Adw.Dialog):
 
         page = Adw.PreferencesPage.new()
 
+        # Cellar Group
+        cellar_grp = Adw.PreferencesGroup.new()
+        cellar_grp.set_title("Cellar Inventory")
+
+        cellar_count_row = Adw.ActionRow.new()
+        cellar_count_row.set_title("Wines in Cellar")
+        cellar_count_row.set_subtitle(f"{stats.get('cellar_count', 0)} different wines")
+        cellar_grp.add(cellar_count_row)
+
+        bottles_row = Adw.ActionRow.new()
+        bottles_row.set_title("Total Bottles")
+        bottles_row.set_subtitle(f"{stats.get('cellar_bottles', 0)} bottles stored")
+        cellar_grp.add(bottles_row)
+
+        page.add(cellar_grp)
+
         # Overview Group
         overview_grp = Adw.PreferencesGroup.new()
-        overview_grp.set_title("Overview")
+        overview_grp.set_title("Tasting Overview")
 
         total_row = Adw.ActionRow.new()
-        total_row.set_title("Total Wines Tasted")
-        total_row.set_subtitle(f"{stats['total']} bottles recorded")
+        total_row.set_title("Wines Tasted")
+        total_row.set_subtitle(f"{stats['total']} tasting notes recorded")
         overview_grp.add(total_row)
 
         avg_row = Adw.ActionRow.new()
@@ -54,7 +70,7 @@ class StatsDialog(Adw.Dialog):
 
         # Style Breakdown Group
         styles_grp = Adw.PreferencesGroup.new()
-        styles_grp.set_title("Styles Breakdown")
+        styles_grp.set_title("Styles Breakdown (Tasted)")
 
         for style, count in stats.get("styles", {}).items():
             s_row = Adw.ActionRow.new()
